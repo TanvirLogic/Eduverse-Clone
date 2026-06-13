@@ -6,7 +6,8 @@ class Urls {
   static const String signUpUrl = '$_baseUrl/auth/register';
   static const String googleAuthUrl = '$_baseUrl/auth/google';
   static const String verifyEmailUrl = '$_baseUrl/auth/verify-email';
-  static const String resendEmailVerificationUrl = '$_baseUrl/auth/resend-email-verification';
+  static const String resendEmailVerificationUrl =
+      '$_baseUrl/auth/resend-email-verification';
   static const String refreshTokenUrl = '$_baseUrl/auth/refresh';
   static const String logoutUrl = '$_baseUrl/auth/logout';
   static const String forgotPasswordUrl = '$_baseUrl/auth/forgot-password';

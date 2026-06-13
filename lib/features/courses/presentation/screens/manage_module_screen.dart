@@ -7,6 +7,7 @@ import 'package:edtech/global/core/widgets/auth_button.dart';
 import 'package:edtech/global/core/widgets/swipe_action_widget.dart';
 import 'package:edtech/features/courses/presentation/models/manage_module_models.dart';
 import 'package:edtech/features/courses/presentation/widgets/module_card.dart';
+import 'package:edtech/features/courses/presentation/widgets/upload_zone.dart';
 
 int _nextModuleId = 1;
 int _nextLessonId = 1;
@@ -91,28 +92,112 @@ class _ManageModuleScreenState extends State<ManageModuleScreen> {
     );
   }
 
-  void _addLessonToModule(int moduleIndex, LessonType type) {
+  void _addLessonToModule(int moduleIndex, LessonType type, {String? customTitle}) {
     setState(() {
-      if (type == LessonType.video) {
-        _modules[moduleIndex].lessons.add(
-          Lesson(
-            id: _nextLessonId++,
-            title: "Setting Up Your Environment",
-            duration: "18:20",
-            type: LessonType.video,
-          ),
-        );
-      } else {
-        _modules[moduleIndex].lessons.add(
-          Lesson(
-            id: _nextLessonId++,
-            title: "HTML Fundamentals",
-            duration: "18:20",
-            type: LessonType.resource,
-          ),
-        );
-      }
+      _modules[moduleIndex].lessons.add(
+        Lesson(
+          id: _nextLessonId++,
+          title: customTitle ?? (type == LessonType.video ? "Setting Up Your Environment" : "HTML Fundamentals"),
+          duration: "18:20",
+          type: type,
+        ),
+      );
     });
+  }
+
+  void _showAddVideoBottomSheet(int moduleIndex) {
+    final titleController = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final cs = Theme.of(context).colorScheme;
+            final isDark = cs.brightness == Brightness.dark;
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 16,
+                right: 16,
+                top: 16,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 32,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: cs.onSurface.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Upload Video', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: cs.onSurface)),
+                  const SizedBox(height: 20),
+                  UploadZone(cs: cs, isDark: isDark),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Title', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: cs.onSurface)),
+                      ValueListenableBuilder<TextEditingValue>(
+                        valueListenable: titleController,
+                        builder: (_, val, __) => Text(
+                          '${val.text.length}/100',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: cs.onSurface.withValues(alpha: 0.6)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: titleController,
+                    maxLines: 4,
+                    maxLength: 100,
+                    buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+                    style: TextStyle(color: cs.onSurface),
+                    decoration: InputDecoration(
+                      hintText: 'Enter your video title',
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide(
+                          color: isDark ? cs.outlineVariant : const Color(0xFFEFEFF0),
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide(color: cs.primary, width: 1.5),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  AuthButton(
+                    text: 'Upload Video',
+                    borderRadius: 15,
+                    onPressed: () {
+                      _addLessonToModule(moduleIndex, LessonType.video, customTitle: titleController.text.trim().isEmpty ? null : titleController.text.trim());
+                      titleController.dispose();
+                      Navigator.of(ctx).pop();
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    ).then((_) => titleController.dispose());
   }
 
   @override
@@ -427,7 +512,7 @@ class _ManageModuleScreenState extends State<ManageModuleScreen> {
                 _hasUnsavedChanges = true;
               }),
               onShowRenameDialog: _showRenameDialog,
-              onAddVideo: () => _addLessonToModule(index, LessonType.video),
+              onAddVideo: () => _showAddVideoBottomSheet(index),
               onAddResource: () => _addLessonToModule(index, LessonType.resource),
               onReorderLesson: (oldLessonIndex, newLessonIndex) {
                 setState(() {
