@@ -15,9 +15,9 @@ import 'package:edtech/features/courses/providers/course_list_provider.dart';
 import 'package:edtech/features/courses/providers/course_upload_provider.dart';
 import 'package:edtech/features/courses/providers/enrolled_course_provider.dart';
 import 'package:edtech/features/courses/providers/video_post_provider.dart';
+import 'package:edtech/features/courses/providers/course_feed_provider.dart';
 import 'package:edtech/features/courses/providers/video_queue_upload_provider.dart';
 import 'package:edtech/features/hub/providers/change_password_provider.dart';
-import 'package:edtech/features/social/providers/social_feed_provider.dart';
 import 'package:edtech/global/core/services/toast_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -51,7 +51,7 @@ class App extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ChangePasswordProvider()),
         ChangeNotifierProvider(create: (_) => VideoPostProvider()),
         ChangeNotifierProvider(create: (_) => VideoQueueUploadProvider()),
-        ChangeNotifierProvider(create: (_) => SocialFeedProvider()),
+        ChangeNotifierProvider(create: (_) => CourseFeedProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) => MaterialApp(
