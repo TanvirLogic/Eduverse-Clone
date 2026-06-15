@@ -1,7 +1,13 @@
+import 'package:edtech/app/app_colors.dart';
+import 'package:edtech/app/app_routes.dart';
 import 'package:edtech/global/core/constants/sizes.dart';
+import 'package:edtech/global/core/services/toast_service.dart';
 import 'package:edtech/global/core/widgets/app_back_button.dart';
 import 'package:edtech/global/core/widgets/auth_button.dart';
+import 'package:edtech/features/courses/providers/video_post_provider.dart';
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../widgets/upload_zone.dart';
 
 class UploadVideoScreen extends StatefulWidget {
@@ -15,6 +21,7 @@ class UploadVideoScreen extends StatefulWidget {
 class _UploadVideoScreenState extends State<UploadVideoScreen> {
   final TextEditingController _titleController = TextEditingController();
   int _characterCount = 0;
+  bool _didReset = false;
 
   @override
   void initState() {
@@ -25,9 +32,37 @@ class _UploadVideoScreenState extends State<UploadVideoScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_didReset) {
+      _didReset = true;
+      context.read<VideoPostProvider>().reset();
+    }
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleUpload(VideoPostProvider provider) async {
+    if (_titleController.text.trim().isEmpty) {
+      ToastService.showError('Title is required');
+      return;
+    }
+    if (provider.videoFile == null) {
+      ToastService.showError('Please select a video file');
+      return;
+    }
+
+    await provider.uploadVideoPost(
+      title: _titleController.text.trim(),
+    );
+
+    if (mounted && provider.step == VideoUploadStep.done) {
+      Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+    }
   }
 
   @override
@@ -56,14 +91,23 @@ class _UploadVideoScreenState extends State<UploadVideoScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    UploadZone(cs: cs, isDark: isDark),
+                    Consumer<VideoPostProvider>(
+                      builder: (context, provider, _) {
+                        return UploadZone(
+                          cs: cs,
+                          isDark: isDark,
+                          onTap: () => provider.pickVideo(),
+                          selectedFileName: provider.videoFile?.name,
+                        );
+                      },
+                    ),
                     const SizedBox(height: 24),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('Title', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: cs.onSurface)),
                         Text(
-                          '$_characterCount/100',
+                          '$_characterCount/60',
                           style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: cs.onSurface.withValues(alpha: 0.6)),
                         ),
                       ],
@@ -71,30 +115,32 @@ class _UploadVideoScreenState extends State<UploadVideoScreen> {
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _titleController,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
                       maxLines: 4,
-                      maxLength: 100,
+                      maxLength: 60,
                       buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                       style: TextStyle(color: cs.onSurface),
                       decoration: InputDecoration(
                         hintText: 'Enter your video title',
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
+                          borderRadius: BorderRadius.circular(AppSizes.radiusDef),
                           borderSide: BorderSide(
-                            color: isDark ? cs.outlineVariant : const Color(0xFFEFEFF0),
+                            color: isDark ? cs.outlineVariant : AppColors.border,
                             width: 1,
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: BorderSide(color: cs.primary, width: 1.5),
+                          borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+                          borderSide: BorderSide(color: AppColors.themeColor, width: 1.5),
                         ),
                         errorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
+                          borderRadius: BorderRadius.circular(AppSizes.radiusDef),
                           borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
                         ),
                         focusedErrorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
+                          borderRadius: BorderRadius.circular(AppSizes.radiusDef),
                           borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
                         ),
                       ),
@@ -105,10 +151,14 @@ class _UploadVideoScreenState extends State<UploadVideoScreen> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-              child: AuthButton(
-                text: 'Upload Video',
-                borderRadius: 15,
-                onPressed: () {},
+              child: Consumer<VideoPostProvider>(
+                builder: (context, provider, _) {
+                  return AuthButton(
+                    text: provider.buttonText,
+                    borderRadius: 28,
+                    onPressed: provider.isLoading ? null : () => _handleUpload(provider),
+                  );
+                },
               ),
             ),
           ],

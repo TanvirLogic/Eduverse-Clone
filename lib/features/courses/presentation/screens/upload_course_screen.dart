@@ -1,9 +1,11 @@
+import 'package:edtech/app/app_colors.dart';
 import 'package:edtech/app/app_routes.dart';
 import 'package:edtech/features/courses/providers/course_upload_provider.dart';
 import 'package:edtech/global/core/constants/sizes.dart';
 import 'package:edtech/global/core/services/toast_service.dart';
 import 'package:edtech/global/core/widgets/app_back_button.dart';
 import 'package:edtech/global/core/widgets/auth_button.dart';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../widgets/upload_zone.dart';
@@ -167,16 +169,16 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
                           final name = provider.thumbnailFile?.name;
                           return InkWell(
                             onTap: () => provider.pickThumbnail(),
-                            borderRadius: BorderRadius.circular(15),
+                            borderRadius: BorderRadius.circular(AppSizes.radiusDef),
                             child: Ink(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                               decoration: BoxDecoration(
                                 color: isDark ? cs.surfaceContainerHighest : Colors.white,
                                 border: Border.all(
-                                  color: isDark ? cs.outlineVariant : const Color(0xFFEFEFF0),
+                                  color: isDark ? cs.outlineVariant : AppColors.border,
                                   width: 1,
                                 ),
-                                borderRadius: BorderRadius.circular(15),
+                                borderRadius: BorderRadius.circular(AppSizes.radiusDef),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -199,7 +201,7 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
                                   const SizedBox(width: 8),
                                   Text(
                                     name != null ? 'Change' : 'Choose',
-                                    style: TextStyle(color: cs.primary, fontWeight: FontWeight.w700, fontSize: 14),
+                                    style: TextStyle(color: AppColors.themeColor, fontWeight: FontWeight.w700, fontSize: 14),
                                   ),
                                 ],
                               ),
@@ -268,21 +270,10 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
                     children: [
                       AuthButton(
                         text: provider.buttonText,
-                        borderRadius: 15,
+                        borderRadius: 28,
                         onPressed: provider.isLoading ? null : _handleSubmit,
                       ),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: provider.isLoading
-                            ? () => provider.cancel()
-                            : () => Navigator.maybePop(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isDark ? cs.surfaceContainerHighest : const Color(0xFFF3F4F6),
-                          foregroundColor: provider.isLoading ? cs.error : cs.onSurface,
-                          elevation: 0,
-                        ),
-                        child: Text(provider.isLoading ? 'Cancel Upload' : 'Cancel'),
-                      ),
+
                     ],
                   );
                 },
@@ -314,19 +305,19 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
       hintStyle: TextStyle(color: cs.onSurface.withValues(alpha: 0.5), fontSize: 14),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: BorderSide(color: isDark ? cs.outlineVariant : const Color(0xFFEFEFF0), width: 1),
+        borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+        borderSide: BorderSide(color: isDark ? cs.outlineVariant : AppColors.border, width: 1),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: BorderSide(color: cs.primary, width: 1.5),
+        borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+        borderSide: BorderSide(color: AppColors.themeColor, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(AppSizes.radiusDef),
         borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(AppSizes.radiusDef),
         borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
       ),
     );
@@ -350,19 +341,19 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
       decoration: InputDecoration(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: isDark ? cs.outlineVariant : const Color(0xFFEFEFF0), width: 1),
+          borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+          borderSide: BorderSide(color: isDark ? cs.outlineVariant : AppColors.border, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: cs.primary, width: 1.5),
+          borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+          borderSide: BorderSide(color: AppColors.themeColor, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(AppSizes.radiusDef),
           borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(AppSizes.radiusDef),
           borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
         ),
         filled: true,
@@ -377,14 +368,14 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
     final isDark = cs.brightness == Brightness.dark;
     return InkWell(
       onTap: () => setState(() => _courseType = type),
-      borderRadius: BorderRadius.circular(15),
+      borderRadius: BorderRadius.circular(AppSizes.radiusDef),
       child: Ink(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
           color: isDark ? cs.surfaceContainerHighest : Colors.white,
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(AppSizes.radiusDef),
           border: Border.all(
-            color: isDark ? cs.outlineVariant : const Color(0xFFEFEFF0),
+            color: isDark ? cs.outlineVariant : AppColors.border,
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -392,7 +383,7 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
           children: [
             Icon(
               isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-              color: isSelected ? cs.primary : cs.onSurface.withValues(alpha: 0.5),
+              color: isSelected ? AppColors.themeColor : cs.onSurface.withValues(alpha: 0.5),
               size: 22,
             ),
             const SizedBox(width: 12),

@@ -1,3 +1,5 @@
+import 'package:edtech/global/core/constants/sizes.dart';
+import 'package:edtech/app/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../global/core/constants/images/images.dart';
@@ -91,10 +93,10 @@ class MetricCard extends StatelessWidget {
         iconPath!,
         width: 20,
         height: 20,
-        colorFilter: ColorFilter.mode(cs.primary, BlendMode.srcIn),
+        colorFilter: ColorFilter.mode(AppColors.themeColor, BlendMode.srcIn),
       );
     }
-    return Icon(icon, color: cs.primary, size: 20);
+    return Icon(icon, color: AppColors.themeColor, size: 20);
   }
 
   @override
@@ -103,7 +105,7 @@ class MetricCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: isDark ? cs.surfaceContainerLow : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
         border: Border.all(
           color: cs.outlineVariant,
         ),
@@ -112,7 +114,7 @@ class MetricCard extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 20,
-            backgroundColor: cs.primary.withValues(alpha: 0.08),
+            backgroundColor: AppColors.themeColor.withValues(alpha: 0.08),
             child: _buildIcon(),
           ),
           const SizedBox(width: 10),

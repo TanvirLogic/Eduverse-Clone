@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:edtech/global/core/widgets/swipe_action_widget.dart';
 
 class SocialLinksFormBlockUi extends StatelessWidget {
+  final ValueNotifier<int> resetNotifier;
   final List<TextEditingController> platformControllers;
   final List<TextEditingController> urlControllers;
   final List<String> socialPlatforms;
@@ -9,6 +11,7 @@ class SocialLinksFormBlockUi extends StatelessWidget {
 
   const SocialLinksFormBlockUi({
     super.key,
+    required this.resetNotifier,
     required this.platformControllers,
     required this.urlControllers,
     required this.socialPlatforms,
@@ -57,6 +60,7 @@ class SocialLinksFormBlockUi extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 12),
             child: _SocialLinkFormRow(
               key: ObjectKey(platformControllers[index]),
+              resetNotifier: resetNotifier,
               platformController: platformControllers[index],
               urlController: urlControllers[index],
               socialPlatforms: socialPlatforms,
@@ -99,6 +103,7 @@ class SocialLinksFormBlockUi extends StatelessWidget {
 }
 
 class _SocialLinkFormRow extends StatefulWidget {
+  final ValueNotifier<int> resetNotifier;
   final TextEditingController platformController;
   final TextEditingController urlController;
   final List<String> socialPlatforms;
@@ -106,6 +111,7 @@ class _SocialLinkFormRow extends StatefulWidget {
 
   const _SocialLinkFormRow({
     super.key,
+    required this.resetNotifier,
     required this.platformController,
     required this.urlController,
     required this.socialPlatforms,
@@ -117,139 +123,181 @@ class _SocialLinkFormRow extends StatefulWidget {
 }
 
 class _SocialLinkFormRowState extends State<_SocialLinkFormRow> {
+  final ValueNotifier<bool> _revealNotifier = ValueNotifier(false);
+
+  @override
+  void dispose() {
+    _revealNotifier.dispose();
+    super.dispose();
+  }
+
+  Future<bool> _confirmDelete() async {
+    final cs = Theme.of(context).colorScheme;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Text(
+          "Delete Social Link",
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: cs.onSurface),
+        ),
+        content: Text(
+          "Are you sure you want to delete this social link?",
+          style: TextStyle(fontSize: 14, color: cs.onSurface),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text("Cancel", style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6))),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text("Delete", style: TextStyle(color: cs.error)),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Dismissible(
-      key: widget.key ?? const ValueKey('dismissible_row'),
-      direction: DismissDirection.horizontal,
-      background: Container(
-        decoration: BoxDecoration(
-          color: cs.error.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        alignment: Alignment.center,
-        child: Icon(Icons.delete_outline, color: cs.error, size: 28),
-      ),
-      confirmDismiss: (_) async {
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: Text(
-              "Delete Social Link",
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: cs.onSurface),
-            ),
-            content: Text(
-              "Are you sure you want to delete this social link?",
-              style: TextStyle(fontSize: 14, color: cs.onSurface),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: Text("Cancel", style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6))),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(true),
-                child: Text("Delete", style: TextStyle(color: cs.error)),
-              ),
-            ],
-          ),
-        );
-        return confirmed ?? false;
+    return SwipeActionWidget(
+      revealNotifier: _revealNotifier,
+      resetNotifier: widget.resetNotifier,
+      onDelete: () async {
+        final confirmed = await _confirmDelete();
+        if (confirmed) widget.onRemove();
+        return confirmed;
       },
-      onDismissed: (_) => widget.onRemove(),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            flex: 3,
-            child: SizedBox(
-              height: 45,
-              child: TextFormField(
-                controller: widget.urlController,
-                style: TextStyle(fontSize: 14, color: cs.onSurface),
-                decoration: InputDecoration(
-                  hintText: "Paste your Profile Link",
-                  hintStyle: TextStyle(
-                    color: cs.onSurface.withValues(alpha: 0.5),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                  ),
-                  filled: true,
-                  fillColor: cs.surfaceContainerHighest,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: cs.outlineVariant, width: 1),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: cs.primary, width: 1.5),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            flex: 2,
-            child: SizedBox(
-              height: 45,
-              child: DropdownButtonFormField<String>(
-                initialValue: widget.socialPlatforms.contains(
-                  widget.platformController.text.trim(),
+      child: ListenableBuilder(
+        listenable: _revealNotifier,
+        builder: (context, _) {
+          final isRevealed = _revealNotifier.value;
+          final borderRadius = isRevealed
+              ? const BorderRadius.only(
+                  topLeft: Radius.circular(14),
+                  bottomLeft: Radius.circular(14),
                 )
-                    ? widget.platformController.text.trim()
-                    : null,
-                isExpanded: true,
-                hint: Text(
-                  "Platform",
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: cs.onSurface.withValues(alpha: 0.5),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                items: widget.socialPlatforms.map((platform) {
-                  return DropdownMenuItem<String>(
-                    value: platform,
-                    child: Text(
-                      platform,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 14, color: cs.onSurface),
-                    ),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) widget.platformController.text = value;
-                },
-                style: TextStyle(fontSize: 14, color: cs.onSurface),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: cs.surfaceContainerHighest,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: cs.outlineVariant, width: 1),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: cs.primary, width: 1.5),
-                  ),
-                ),
-                icon: Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: cs.onSurface.withValues(alpha: 0.6),
-                ),
-              ),
+              : BorderRadius.circular(14);
+
+          return Container(
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerHighest,
+              borderRadius: borderRadius,
             ),
-          ),
-        ],
+            clipBehavior: Clip.antiAlias,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: SizedBox(
+                    height: 50,
+                    child: TextFormField(
+                      controller: widget.urlController,
+                      style: TextStyle(fontSize: 14, color: cs.onSurface),
+                      decoration: InputDecoration(
+                        hintText: "Paste your Profile Link",
+                        hintStyle: TextStyle(
+                          color: cs.onSurface.withValues(alpha: 0.5),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        filled: true,
+                        fillColor: Colors.transparent,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: cs.outlineVariant, width: 1),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: cs.primary, width: 1.5),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: SizedBox(
+                    height: 50,
+                    child: DropdownButtonFormField<String>(
+                      initialValue: widget.socialPlatforms.contains(
+                        widget.platformController.text.trim(),
+                      )
+                          ? widget.platformController.text.trim()
+                          : null,
+                      isExpanded: true,
+                      hint: Text(
+                        "Platform",
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: cs.onSurface.withValues(alpha: 0.5),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      items: widget.socialPlatforms.map((platform) {
+                        return DropdownMenuItem<String>(
+                          value: platform,
+                          child: Text(
+                            platform,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 14, color: cs.onSurface),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != null) widget.platformController.text = value;
+                      },
+                      style: TextStyle(fontSize: 14, color: cs.onSurface),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.transparent,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: isRevealed
+                              ? const BorderRadius.only(
+                                  topLeft: Radius.circular(14),
+                                  bottomLeft: Radius.circular(14),
+                                )
+                              : BorderRadius.circular(14),
+                          borderSide: BorderSide(color: cs.outlineVariant, width: 1),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: isRevealed
+                              ? const BorderRadius.only(
+                                  topLeft: Radius.circular(14),
+                                  bottomLeft: Radius.circular(14),
+                                )
+                              : BorderRadius.circular(14),
+                          borderSide: BorderSide(color: cs.primary, width: 1.5),
+                        ),
+                      ),
+                      icon: Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: cs.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

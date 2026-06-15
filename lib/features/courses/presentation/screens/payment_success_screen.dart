@@ -97,7 +97,7 @@ class _PaymentSummaryContainer extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppSizes.radiusLg2),
         border: Border.all(
           color: theme.colorScheme.outlineVariant,
           width: 1.0,

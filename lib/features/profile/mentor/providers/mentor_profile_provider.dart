@@ -3,6 +3,7 @@ import 'package:edtech/app/setup_network_caller.dart';
 import 'package:edtech/app/urls.dart';
 import 'package:edtech/features/profile/shared/models/social_link_param.dart';
 import 'package:edtech/features/profile/student/data/models/user_profile_model.dart';
+import 'package:edtech/global/core/services/logger_service.dart';
 import 'package:edtech/global/core/services/toast_service.dart';
 
 class MentorProfileProvider extends ChangeNotifier {
@@ -87,7 +88,7 @@ class MentorProfileProvider extends ChangeNotifier {
     if (name != null) body['name'] = name;
     if (username != null) body['username'] = username;
     if (profession != null) body['profession'] = profession;
-    if (dob != null) body['dob'] = dob;
+    if (dob != null && dob.isNotEmpty) body['dob'] = dob;
     if (bio != null) body['bio'] = bio;
     if (country != null) body['country'] = country;
     if (phone != null) body['phone'] = phone;
@@ -102,6 +103,9 @@ class MentorProfileProvider extends ChangeNotifier {
       url: Urls.profileUpdateUrl,
       body: body,
     );
+
+    AppLogger.i('MentorProfileProvider updateProfile request: $body');
+    AppLogger.i('MentorProfileProvider updateProfile response: ${response.responseData}');
 
     if (response.isSuccess) {
       _isSuccess = true;

@@ -9,6 +9,7 @@ import 'package:edtech/app/setup_network_caller.dart';
 import 'package:edtech/app/urls.dart';
 import 'package:edtech/global/core/services/logger_service.dart';
 import 'package:edtech/global/core/services/toast_service.dart';
+import 'package:edtech/global/core/services/upload_notification_service.dart';
 
 class _StreamedProgressRequest extends http.BaseRequest {
   final Stream<List<int>> _stream;
@@ -70,6 +71,8 @@ class CourseUploadProvider extends ChangeNotifier {
     _activeClient = null;
     _step = UploadStep.idle;
     _uploadProgress = 0.0;
+    UploadNotificationService.cancel();
+    UploadNotificationService.stopService();
     notifyListeners();
   }
 
@@ -142,6 +145,8 @@ class CourseUploadProvider extends ChangeNotifier {
     _createdCourseId = null;
     _thumbnailFile = null;
     _videoFile = null;
+    UploadNotificationService.cancel();
+    UploadNotificationService.stopService();
     notifyListeners();
   }
 
@@ -171,6 +176,7 @@ class CourseUploadProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      await UploadNotificationService.startService();
       _step = UploadStep.uploadingUrls;
       notifyListeners();
 
@@ -198,6 +204,8 @@ class CourseUploadProvider extends ChangeNotifier {
         _errorMessage = urlsResponse.errorMessage;
         AppLogger.e('CourseUpload: upload-urls failed — code=${urlsResponse.responseCode}, error=$_errorMessage, body=${urlsResponse.responseData}');
         ToastService.showError('Failed to get upload URL');
+        await UploadNotificationService.showError(title: 'Upload Failed');
+        await UploadNotificationService.stopService();
         notifyListeners();
         return false;
       }
@@ -212,6 +220,8 @@ class CourseUploadProvider extends ChangeNotifier {
         _errorMessage = 'Invalid response from server';
         AppLogger.e('CourseUpload: unexpected response format — $raw');
         ToastService.showError('Failed to get upload URL');
+        await UploadNotificationService.showError(title: 'Upload Failed');
+        await UploadNotificationService.stopService();
         notifyListeners();
         return false;
       }
@@ -220,6 +230,8 @@ class CourseUploadProvider extends ChangeNotifier {
         _step = UploadStep.error;
         _errorMessage = 'Missing thumbnail upload info';
         ToastService.showError('Failed to get upload URL');
+        await UploadNotificationService.showError(title: 'Upload Failed');
+        await UploadNotificationService.stopService();
         notifyListeners();
         return false;
       }
@@ -229,6 +241,8 @@ class CourseUploadProvider extends ChangeNotifier {
         _step = UploadStep.error;
         _errorMessage = 'Invalid thumbnail upload info';
         ToastService.showError('Failed to get upload URL');
+        await UploadNotificationService.showError(title: 'Upload Failed');
+        await UploadNotificationService.stopService();
         notifyListeners();
         return false;
       }
@@ -281,12 +295,16 @@ class CourseUploadProvider extends ChangeNotifier {
         _createdCourseId = (data is Map<String, dynamic>) ? data['id']?.toString() : null;
         _step = UploadStep.done;
         ToastService.showSuccess('Course created successfully');
+        await UploadNotificationService.showSuccess(title: 'Course Created');
+        await UploadNotificationService.stopService();
         notifyListeners();
         return true;
       } else {
         _step = UploadStep.error;
         _errorMessage = courseResponse.errorMessage;
         ToastService.showError(courseResponse.errorMessage ?? 'Failed to create course');
+        await UploadNotificationService.showError(title: 'Upload Failed');
+        await UploadNotificationService.stopService();
         notifyListeners();
         return false;
       }
@@ -302,6 +320,8 @@ class CourseUploadProvider extends ChangeNotifier {
       _errorMessage = e.toString();
       AppLogger.e('CourseUpload: unexpected error — $_errorMessage');
       ToastService.showError('Something went wrong. Please try again.');
+      await UploadNotificationService.showError(title: 'Upload Failed');
+      await UploadNotificationService.stopService();
       notifyListeners();
       return false;
     }
@@ -324,6 +344,12 @@ class CourseUploadProvider extends ChangeNotifier {
         lastPct = pct;
         _uploadProgress = sent / total;
         notifyListeners();
+        await UploadNotificationService.showProgress(
+          progress: sent,
+          total: total,
+          title: 'Uploading Course Assets',
+          fileName: file.name,
+        );
         await Future<void>.delayed(const Duration(milliseconds: 16));
       }
       return chunk;

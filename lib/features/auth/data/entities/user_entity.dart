@@ -1,3 +1,5 @@
+enum UserRole { student, mentor }
+
 /// Represents the Authenticated User in the domain layer.
 class UserEntity {
   final String id;
@@ -9,7 +11,7 @@ class UserEntity {
   final String? phone;
   final String? avatarUrl;
   final String? city;
-  final int? role;
+  final UserRole? role;
   final bool? emailVerified;
   final bool? phoneVerified;
 
@@ -31,11 +33,11 @@ class UserEntity {
   /// Helper to get full name
   String get fullName => '$firstName $lastName'.trim();
 
-  /// Returns `true` if the user's role is MENTOR (role == 1).
-  bool get isMentor => role == 1;
+  /// Returns `true` if the user's role is MENTOR.
+  bool get isMentor => role == UserRole.mentor;
 
-  /// Returns `true` if the user's role is STUDENT (role == 0).
-  bool get isStudent => role == 0;
+  /// Returns `true` if the user's role is STUDENT.
+  bool get isStudent => role == UserRole.student;
 
   @override
   bool operator ==(Object other) =>

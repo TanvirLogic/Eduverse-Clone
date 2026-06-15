@@ -287,7 +287,7 @@ class _GoogleButton extends StatelessWidget {
     return showModalBottomSheet<String>(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.radiusLg2)),
       ),
       builder: (context) {
         final cs = Theme.of(context).colorScheme;
@@ -347,15 +347,25 @@ class _GoogleButton extends StatelessWidget {
           onPressed: authProvider.isGoogleLoading || authProvider.inProgress
               ? null
               : () async {
-                  final role = await _showRoleBottomSheet(context);
-                  if (role == null || !context.mounted) return;
-
                   final idToken = await authProvider.getGoogleIdToken();
                   if (idToken == null || !context.mounted) return;
 
-                  final success = await authProvider.completeGoogleSignIn(idToken, role);
-                  if (success && context.mounted) {
+                  final statusCode = await authProvider.googleSignIn(idToken);
+                  if (statusCode == null || !context.mounted) return;
+
+                  if (statusCode == 200) {
                     Navigator.pushReplacementNamed(context, AppRoutes.home);
+                    return;
+                  }
+
+                  if (statusCode == 202) {
+                    final role = await _showRoleBottomSheet(context);
+                    if (role == null || !context.mounted) return;
+
+                    final success = await authProvider.completeGoogleSignIn(idToken, role);
+                    if (success && context.mounted) {
+                      Navigator.pushReplacementNamed(context, AppRoutes.home);
+                    }
                   }
                 },
           style: OutlinedButton.styleFrom(
@@ -368,7 +378,7 @@ class _GoogleButton extends StatelessWidget {
                   : Colors.transparent,
               width: 1,
             ),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radiusXl)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -426,7 +436,7 @@ class _RoleOptionTile extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           border: Border.all(color: AppColors.themeColor.withValues(alpha: 0.3)),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppSizes.radiusSm),
         ),
         child: Row(
           children: [
@@ -435,9 +445,9 @@ class _RoleOptionTile extends StatelessWidget {
               height: 48,
               decoration: BoxDecoration(
                 color: AppColors.themeColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppSizes.radiusSm),
               ),
-              child: Icon(icon, color: AppColors.themeColor, size: 24),
+                child: Icon(icon, color: AppColors.themeColor, size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(

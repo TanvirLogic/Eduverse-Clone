@@ -5,21 +5,21 @@ class Images {
   static const String eduverseLogo = 'assets/images/app/eduverse_logo.png';
 
   // ============================ Action Icons ================================ //
-  static const String edit_profile = 'assets/images/icons/action/edit_profile.svg';
-  static const String camera_icon = 'assets/images/icons/action/camera.svg';
+  static const String editProfile = 'assets/images/icons/action/edit_profile.svg';
+  static const String cameraIcon = 'assets/images/icons/action/camera.svg';
   static const String location = 'assets/images/icons/action/location.svg';
-  static const String book_icon = 'assets/images/icons/action/book_icon.svg';
-  static const String video_icon = 'assets/images/icons/action/video_icon.svg';
-  static const String blue_tick = 'assets/images/profile_icons/blue_tick.png';
+  static const String bookIcon = 'assets/images/icons/action/book_icon.svg';
+  static const String videoIcon = 'assets/images/icons/action/video_icon.svg';
+  static const String blueTick = 'assets/images/profile_icons/blue_tick.png';
 
   // ============================= Social Icons ================================ //
-  static const String website_icon = 'assets/images/icons/action/website.svg';
-  static const String facebook_icon = 'assets/images/icons/action/facebook.svg';
-  static const String github_icon = 'assets/images/icons/action/github.svg';
-  static const String linkedin_icon = 'assets/images/icons/action/linkedin.svg';
-  static const String instagram_icon = 'assets/images/icons/action/instagram.svg';
-  static const String youtube_icon = 'assets/images/icons/action/youtube.svg';
-  static const String twiter_icon = 'assets/images/icons/action/twiter.svg';
+  static const String websiteIcon = 'assets/images/icons/action/website.svg';
+  static const String facebookIcon = 'assets/images/icons/action/facebook.svg';
+  static const String githubIcon = 'assets/images/icons/action/github.svg';
+  static const String linkedinIcon = 'assets/images/icons/action/linkedin.svg';
+  static const String instagramIcon = 'assets/images/icons/action/instagram.svg';
+  static const String youtubeIcon = 'assets/images/icons/action/youtube.svg';
+  static const String twiterIcon = 'assets/images/icons/action/twiter.svg';
 
   // ============================= Nav Bar Icons ================================ //
   static const String navPost = 'assets/images/icons/nav/post_icon.svg';
@@ -39,7 +39,7 @@ class Images {
   static const String hubTransaction = 'assets/images/icons/hub/transaction.svg';
   static const String hubAdAccount = 'assets/images/icons/hub/ad_account.svg';
   static const String hubDarkMode = 'assets/images/icons/hub/dark_mode.svg';
-  static const String notification_icon = 'assets/images/icons/hub/notification.svg';
+  static const String notificationIcon = 'assets/images/icons/hub/notification.svg';
   static const String hubNotification = 'assets/images/icons/hub/notification_icon.svg';
   static const String hubMail = 'assets/images/icons/hub/email_icon.svg';
   static const String logout = 'assets/images/icons/hub/logout.svg';
@@ -61,8 +61,8 @@ class Images {
   static const String book = 'assets/images/revenue_icons/book_icon.svg';
 
   // ============================= Ads Manager Icons ================================ //
-  static const String learn_video = 'assets/images/icons/course/learn_icon.svg';
-  static const String total_impression = 'assets/images/icons/course/total_impression.svg';
+  static const String learnVideo = 'assets/images/icons/course/learn_icon.svg';
+  static const String totalImpression = 'assets/images/icons/course/total_impression.svg';
   static const String activeAds = 'assets/images/revenue_icons/ad_account.svg';
-  static const String book_ads = 'assets/images/icons/course/book_ads.svg';
+  static const String bookAds = 'assets/images/icons/course/book_ads.svg';
 }

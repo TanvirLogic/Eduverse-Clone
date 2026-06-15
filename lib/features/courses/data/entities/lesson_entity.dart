@@ -8,4 +8,12 @@ class LessonEntity {
     required this.duration,
     this.isLocked = true,
   });
+
+  factory LessonEntity.fromJson(Map<String, dynamic> json) {
+    return LessonEntity(
+      title: json['title'] ?? '',
+      duration: json['duration'] ?? '',
+      isLocked: json['is_locked'] == true || json['isLocked'] == true,
+    );
+  }
 }

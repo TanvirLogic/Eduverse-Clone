@@ -1,9 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:edtech/app/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../../../../../../global/core/constants/images/images.dart';
-import 'package:edtech/app/app_colors.dart';
+
 import 'package:edtech/features/profile/avatar/providers/avatar_upload_provider.dart';
 import '../../data/entities/user_profile_entity.dart';
 
@@ -36,7 +37,7 @@ class ProfileHeaderCard extends StatelessWidget {
                     padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFEFEFF0), width: 1),
+                      border: Border.all(color: AppColors.border, width: 1),
                     ),
                       child: SizedBox(
                         width: 110,
@@ -122,12 +123,12 @@ class ProfileHeaderCard extends StatelessWidget {
                           ),
                           child: Container(
                             padding: const EdgeInsets.all(10),
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               color: AppColors.themeColor,
                               shape: BoxShape.circle,
                             ),
                             child: SvgPicture.asset(
-                              Images.camera_icon,
+                              Images.cameraIcon,
                               width: 12,
                               height: 12,
                               colorFilter: const ColorFilter.mode(
@@ -176,7 +177,7 @@ class ProfileHeaderCard extends StatelessWidget {
               Row(
                 children: [
                   SvgPicture.asset(
-                    Images.video_icon,
+                    Images.videoIcon,
                     width: 16,
                     height: 16,
                     colorFilter: ColorFilter.mode(AppColors.themeColor, BlendMode.srcIn),
@@ -192,7 +193,7 @@ class ProfileHeaderCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   SvgPicture.asset(
-                    Images.book_icon,
+                    Images.bookIcon,
                     width: 16,
                     height: 16,
                     colorFilter: ColorFilter.mode(AppColors.themeColor, BlendMode.srcIn),

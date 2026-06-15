@@ -1,6 +1,7 @@
+import 'package:edtech/global/core/constants/sizes.dart';
+import 'package:edtech/app/app_colors.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:edtech/app/app_colors.dart';
 import '../../data/entities/user_profile_entity.dart';
 
 /// Vertical list of completed courses from the API.
@@ -9,7 +10,6 @@ class CompletedCoursesVerticalListView extends StatelessWidget {
   final bool isMentorProfile;
   final bool isOwnProfile;
   final void Function(ProfileCourse course)? onActionPressed;
-
   const CompletedCoursesVerticalListView({
     super.key,
     required this.courses,
@@ -17,20 +17,14 @@ class CompletedCoursesVerticalListView extends StatelessWidget {
     this.isOwnProfile = false,
     this.onActionPressed,
   });
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     if (courses.isEmpty) return const SizedBox.shrink();
-
     return Column(
       children: List.generate(courses.length * 2 - 1, (index) {
         if (index.isOdd) {
-          return Divider(
-            height: 1,
-            color: cs.outlineVariant,
-            thickness: 1,
-          );
+          return Divider(height: 1, color: cs.outlineVariant, thickness: 1);
         }
         final item = courses[index ~/ 2];
         return Padding(
@@ -42,7 +36,7 @@ class CompletedCoursesVerticalListView extends StatelessWidget {
                 height: 52,
                 decoration: BoxDecoration(
                   color: cs.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusXs),
                   image: DecorationImage(
                     image: CachedNetworkImageProvider(item.image),
                     fit: BoxFit.cover,
@@ -87,7 +81,9 @@ class CompletedCoursesVerticalListView extends StatelessWidget {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.themeColor,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(
+                                    AppSizes.radiusMd,
+                                  ),
                                 ),
                                 elevation: 0,
                                 padding: EdgeInsets.zero,
@@ -103,16 +99,23 @@ class CompletedCoursesVerticalListView extends StatelessWidget {
                           : DecoratedBox(
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFF134BBF), Color(0xFF5B83FF)],
+                                  colors: [
+                                    Color(0xFF134BBF),
+                                    Color(0xFF5B83FF),
+                                  ],
                                   begin: Alignment.centerLeft,
                                   end: Alignment.centerRight,
                                 ),
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(
+                                  AppSizes.radiusMd,
+                                ),
                               ),
                               child: Material(
                                 color: Colors.transparent,
                                 child: InkWell(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(
+                                    AppSizes.radiusMd,
+                                  ),
                                   onTap: onActionPressed == null
                                       ? null
                                       : () => onActionPressed!(item),
@@ -137,7 +140,7 @@ class CompletedCoursesVerticalListView extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFEFF5FB),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
                         border: Border.all(
                           color: const Color(0xFFACCDEC),
                           width: 0.5,

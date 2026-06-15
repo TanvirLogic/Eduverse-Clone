@@ -67,7 +67,11 @@ class _PasswordAndSecurityScreenState extends State<PasswordAndSecurityScreen> {
     }
 
     if (_isEmailFormFilled) {
-      ToastService.showSuccess('Email change requested');
+      final provider = context.read<ChangePasswordProvider>();
+      await provider.changeEmail(_emailController.text.trim());
+      if (mounted && provider.errorMessage == null) {
+        _emailController.clear();
+      }
       return;
     }
 

@@ -1,10 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:edtech/app/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../../global/core/constants/images/images.dart';
-import 'package:edtech/app/app_colors.dart';
 import 'package:edtech/features/profile/avatar/providers/avatar_upload_provider.dart';
 import 'package:edtech/features/profile/avatar/providers/cover_upload_provider.dart';
 
@@ -147,7 +147,7 @@ class MentorHeroBanner extends StatelessWidget {
                 icon: Padding(
                   padding: const EdgeInsets.all(3),
                   child: SvgPicture.asset(
-                    Images.edit_profile,
+                    Images.editProfile,
                     width: 20,
                     height: 20,
                     colorFilter: ColorFilter.mode(cs.onSurface, BlendMode.srcIn),
@@ -260,12 +260,12 @@ class MentorHeroBanner extends StatelessWidget {
                             ),
                             child: Container(
                               padding: const EdgeInsets.all(10),
-                              decoration: const BoxDecoration(
+                              decoration: BoxDecoration(
                                 color: AppColors.themeColor,
                                 shape: BoxShape.circle,
                               ),
                               child: SvgPicture.asset(
-                                Images.camera_icon,
+                                Images.cameraIcon,
                                 width: 12,
                                 height: 12,
                                 colorFilter: const ColorFilter.mode(

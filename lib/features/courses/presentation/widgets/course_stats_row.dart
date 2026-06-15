@@ -24,7 +24,7 @@ class CourseStatsRow extends StatelessWidget {
         Row(
           children: [
             SvgPicture.asset(
-              Images.video_icon,
+              Images.videoIcon,
               width: 18,
               height: 18,
               colorFilter: ColorFilter.mode(AppColors.themeColor, BlendMode.srcIn),

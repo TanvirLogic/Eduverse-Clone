@@ -1,3 +1,5 @@
+import 'package:edtech/app/app_colors.dart';
+import 'package:edtech/global/core/constants/sizes.dart';
 import 'package:edtech/features/courses/data/entities/review_entity.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -58,9 +60,9 @@ class ReviewCardItem extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? cs.surfaceContainerLow : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
         border: Border.all(
-          color: const Color(0xFFEFEFF0),
+          color: AppColors.border,
         ),
       ),
       child: Column(

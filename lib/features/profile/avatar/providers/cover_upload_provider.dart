@@ -1,9 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:edtech/app/setup_network_caller.dart';
+import 'package:edtech/app/network/s3_upload_service.dart';
 import 'package:edtech/app/urls.dart';
 import 'package:edtech/global/core/services/toast_service.dart';
 
@@ -187,108 +185,33 @@ class CoverUploadProvider extends ChangeNotifier {
   Future<void> _uploadFile(XFile file) async {
     final bytes = await file.readAsBytes();
     final filename = file.name;
-    final contentType = _inferContentType(filename);
+    final contentType = S3UploadService.inferContentType(filename);
 
-    final uploadUrlResponse = await getNetworkCaller().postRequest(
-      url: Urls.coverUploadUrl,
-      body: {'filename': filename, 'contentType': contentType},
+    final result = await S3UploadService.uploadImage(
+      uploadUrlEndpoint: Urls.coverUploadUrl,
+      confirmUrlEndpoint: Urls.coverConfirmUrl,
+      filename: filename,
+      bytes: bytes,
+      contentType: contentType,
+      uploadTimeout: uploadTimeout,
+      onProgress: (progress) {
+        _uploadProgress = progress;
+        notifyListeners();
+      },
     );
 
-    if (!uploadUrlResponse.isSuccess) {
-      _isLoading = false;
-      _errorMessage = uploadUrlResponse.errorMessage;
-      ToastService.showError(uploadUrlResponse.errorMessage ?? 'Failed to get upload URL');
-      notifyListeners();
-      return;
-    }
+    _isLoading = false;
+    _uploadProgress = 0.0;
 
-    final dataObj = uploadUrlResponse.responseData is Map
-        ? (uploadUrlResponse.responseData as Map)['data']
-        : null;
-    if (dataObj is! Map || dataObj['uploadUrl'] == null || dataObj['fileUrl'] == null) {
-      _isLoading = false;
-      _errorMessage = 'Invalid response from server';
-      ToastService.showError('Failed to get upload URL. Invalid server response.');
-      notifyListeners();
-      return;
-    }
-    final uploadUrl = dataObj['uploadUrl'] as String;
-    final fileUrl = dataObj['fileUrl'] as String;
-
-    try {
-      await _streamUpload(url: uploadUrl, bytes: bytes, contentType: contentType);
-    } catch (e) {
-      _isLoading = false;
-      _uploadProgress = 0.0;
-      _errorMessage = 'Failed to upload image to storage';
-      ToastService.showError('Failed to upload image to storage');
-      notifyListeners();
-      return;
-    }
-
-    final confirmResponse = await getNetworkCaller().putRequest(
-      url: Urls.coverConfirmUrl,
-      body: {'fileUrl': fileUrl},
-    );
-
-    if (confirmResponse.isSuccess) {
-      _isLoading = false;
-      _uploadProgress = 0.0;
-      _uploadedCoverUrl = fileUrl;
-      onUploadSuccess?.call(fileUrl);
+    if (result.isSuccess) {
+      _uploadedCoverUrl = result.fileUrl;
+      onUploadSuccess?.call(result.fileUrl!);
       ToastService.showSuccess('Cover photo updated successfully');
     } else {
-      _isLoading = false;
-      _uploadProgress = 0.0;
-      _errorMessage = confirmResponse.errorMessage;
-      ToastService.showError(confirmResponse.errorMessage ?? 'Failed to confirm upload');
+      _errorMessage = result.errorMessage;
+      ToastService.showError(result.errorMessage ?? 'Failed to upload cover');
     }
+
     notifyListeners();
-  }
-
-  Future<void> _streamUpload({
-    required String url,
-    required List<int> bytes,
-    required String contentType,
-  }) async {
-    final totalBytes = bytes.length;
-    const chunkSize = 65536;
-
-    final request = http.StreamedRequest('PUT', Uri.parse(url));
-    request.headers['Content-Type'] = contentType;
-    request.contentLength = totalBytes;
-
-    final responseFuture = request.send().timeout(uploadTimeout);
-
-    int offset = 0;
-    while (offset < totalBytes) {
-      final end = (offset + chunkSize).clamp(0, totalBytes);
-      request.sink.add(bytes.sublist(offset, end));
-      offset = end;
-      _uploadProgress = offset / totalBytes;
-      notifyListeners();
-      await Future.delayed(const Duration(milliseconds: 8));
-    }
-    await request.sink.close();
-
-    final streamedResponse = await responseFuture;
-    if (streamedResponse.statusCode != 200) {
-      throw HttpException(
-        'S3 upload failed with status ${streamedResponse.statusCode}',
-        uri: Uri.parse(url),
-      );
-    }
-  }
-
-  String _inferContentType(String filename) {
-    final ext = filename.split('.').last.toLowerCase();
-    switch (ext) {
-      case 'jpg':
-      case 'jpeg': return 'image/jpeg';
-      case 'png': return 'image/png';
-      case 'gif': return 'image/gif';
-      case 'webp': return 'image/webp';
-      default: return 'image/jpeg';
-    }
   }
 }

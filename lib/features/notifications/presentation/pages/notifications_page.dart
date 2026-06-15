@@ -1,3 +1,5 @@
+import 'package:edtech/app/app_colors.dart';
+import 'package:edtech/global/core/constants/sizes.dart';
 import 'package:edtech/global/core/widgets/app_back_button.dart';
 import 'package:flutter/material.dart';
 
@@ -85,7 +87,7 @@ class NotificationsPage extends StatelessWidget {
             onPressed: () {},
             child: Text(
               'Clear All',
-              style: TextStyle(color: cs.primary, fontSize: 14),
+              style: TextStyle(color: AppColors.themeColor, fontSize: 14),
             ),
           ),
         ],
@@ -113,9 +115,9 @@ class NotificationsPage extends StatelessWidget {
         color: notif.isRead
             ? (isDark ? cs.surfaceContainerLow : Colors.white)
             : (isDark ? cs.surfaceContainerHighest : const Color(0xFFF0F4FF)),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
         border: Border.all(
-          color: const Color(0xFFEFEFF0),
+          color: AppColors.border,
         ),
       ),
       child: Row(
@@ -142,7 +144,7 @@ class NotificationsPage extends StatelessWidget {
                         width: 8,
                         height: 8,
                         decoration: BoxDecoration(
-                          color: cs.primary,
+                          color: AppColors.themeColor,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -180,14 +182,14 @@ class NotificationsPage extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isDark ? cs.surfaceContainerLow : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
         border: Border.all(
-          color: const Color(0xFFEFEFF0),
+          color: AppColors.border,
           width: 1.5,
         ),
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
         onTap: () {},
         child: Row(
           children: [

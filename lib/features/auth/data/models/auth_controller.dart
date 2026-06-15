@@ -30,19 +30,9 @@ class AuthController {
         userModel = UserModel.fromJson(jsonDecode(userData));
         if (userModel?.token == null) {
           final refreshToken = await SecureStorage.getRefreshToken();
-          userModel = UserModel(
-            id: userModel!.id,
-            email: userModel!.email,
-            firstName: userModel!.firstName,
-            lastName: userModel!.lastName,
+          userModel = userModel!.copyWith(
             token: accessToken,
             refreshToken: refreshToken,
-            phone: userModel!.phone,
-            avatarUrl: userModel!.avatarUrl,
-            city: userModel!.city,
-            role: userModel!.role,
-            emailVerified: userModel!.emailVerified,
-            phoneVerified: userModel!.phoneVerified,
           );
         }
       }

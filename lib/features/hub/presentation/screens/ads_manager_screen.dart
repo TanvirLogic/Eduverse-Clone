@@ -1,8 +1,9 @@
+import 'package:edtech/app/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:edtech/global/core/constants/sizes.dart';
 import 'package:edtech/global/core/constants/images/images.dart';
-import 'package:edtech/app/app_colors.dart';
+
 import 'package:edtech/app/app_routes.dart';
 import 'package:edtech/global/core/widgets/app_back_button.dart';
 
@@ -48,11 +49,11 @@ class _AdsManagerScreenState extends State<AdsManagerScreen> {
               child: Container(
                 width: 40,
                 height: 40,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.themeColor,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.add, color: Colors.white, size: 20),
+                child: Icon(Icons.add, color: Colors.white, size: 20),
               ),
             ),
           )
@@ -80,7 +81,7 @@ class _AdsManagerScreenState extends State<AdsManagerScreen> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: _buildSummaryCard(
-                        iconPath: Images.total_impression,
+                        iconPath: Images.totalImpression,
                         iconBg: const Color(0xFF16A34A).withValues(alpha: 0.1),
                         iconColor: const Color(0xFF16A34A),
                         value: '14,280',
@@ -115,7 +116,7 @@ class _AdsManagerScreenState extends State<AdsManagerScreen> {
                   _AdCampaignCard(
                     title: 'Learn Python in 30 days',
                     subtitle: 'Poster ad · Started 22 May',
-                    iconPath: Images.book_ads,
+                    iconPath: Images.bookAds,
                     iconColor: AppColors.themeColor,
                     iconBg: AppColors.themeColor.withValues(alpha: 0.1),
                     spentAmount: 4200,
@@ -185,7 +186,7 @@ class _AdsManagerScreenState extends State<AdsManagerScreen> {
             ? AppColors.themeColor
             : cs.outlineVariant,
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radiusLg2)),
       showCheckmark: false,
     );
   }
@@ -205,9 +206,9 @@ class _AdsManagerScreenState extends State<AdsManagerScreen> {
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
       decoration: BoxDecoration(
         color: isDark ? cs.surfaceContainerLow : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
         border: Border.all(
-          color: const Color(0xFFEFEFF0),
+          color: AppColors.border,
         ),
       ),
       child: Row(
@@ -294,9 +295,9 @@ class _AdCampaignCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: isDark ? cs.surfaceContainerLow : Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppSizes.radiusMd),
             border: Border.all(
-              color: const Color(0xFFEFEFF0),
+              color: AppColors.border,
             ),
           ),
           child: Column(
@@ -347,7 +348,7 @@ class _AdCampaignCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEFF5FB),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusMd),
                     border: Border.all(
                       color: const Color(0xFFACCDEC),
                       width: 0.5,

@@ -1,3 +1,5 @@
+import 'package:edtech/app/app_colors.dart';
+import 'package:edtech/global/core/constants/sizes.dart';
 import 'dart:ui' as ui;
 
 import 'package:edtech/global/core/constants/images/images.dart';
@@ -39,7 +41,7 @@ class PostOptionsOverlay extends StatelessWidget {
               width: 343,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(AppSizes.radiusLg),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
               child: Column(
@@ -54,7 +56,7 @@ class PostOptionsOverlay extends StatelessWidget {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      const Expanded(child: Divider(thickness: 1, color: Color(0xFFEFEFF0))),
+                      const Expanded(child: Divider(thickness: 1, color: AppColors.border)),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         child: Text(
@@ -66,7 +68,7 @@ class PostOptionsOverlay extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const Expanded(child: Divider(thickness: 1, color: Color(0xFFEFEFF0))),
+                      const Expanded(child: Divider(thickness: 1, color: AppColors.border)),
                     ],
                   ),
                   const SizedBox(height: 12),

@@ -34,35 +34,40 @@ class SignInProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    final response = await getNetworkCaller(isPublic: true).postRequest(
-      url: Urls.signInUrl,
-      body: {'email': email, 'password': password},
-    );
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('last_used_email', email);
-
-    if (response.isSuccess) {
-      final data = response.responseData['data'];
-      final user = UserModel.fromJson(
-        data['user'] as Map<String, dynamic>,
-        token: data['accessToken'],
-        refreshToken: data['refreshToken'],
+    try {
+      final response = await getNetworkCaller(isPublic: true).postRequest(
+        url: Urls.signInUrl,
+        body: {'email': email, 'password': password},
       );
-      await AuthController.saveUserData(data['accessToken']?.toString() ?? '', user);
-      _user = user;
-      _errorMessage = null;
-      isSuccess = true;
-      ToastService.showSuccess("Welcome back!");
-    } else {
-      final msg = response.errorMessage ?? '';
-      if (msg.contains('Email not verified') || msg.contains('EMAIL_NOT_VERIFIED')) {
-        _errorMessage = 'EMAIL_NOT_VERIFIED';
-        _user = UserModel(id: '', email: email, firstName: '', lastName: '');
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('last_used_email', email);
+
+      if (response.isSuccess) {
+        final data = response.responseData['data'];
+        final user = UserModel.fromJson(
+          data['user'] as Map<String, dynamic>,
+          token: data['accessToken'],
+          refreshToken: data['refreshToken'],
+        );
+        await AuthController.saveUserData(data['accessToken']?.toString() ?? '', user);
+        _user = user;
+        _errorMessage = null;
+        isSuccess = true;
+        ToastService.showSuccess("Welcome back!");
       } else {
-        _errorMessage = msg;
-        ToastService.showError(msg);
+        final msg = response.errorMessage ?? '';
+        if (msg.contains('Email not verified') || msg.contains('EMAIL_NOT_VERIFIED')) {
+          _errorMessage = 'EMAIL_NOT_VERIFIED';
+          _user = UserModel(id: '', email: email, firstName: '', lastName: '');
+        } else {
+          _errorMessage = msg;
+          ToastService.showError(msg);
+        }
       }
+    } catch (e) {
+      _errorMessage = e.toString();
+      ToastService.showError('An error occurred during sign in');
     }
 
     _inProgress = false;
@@ -92,34 +97,91 @@ class SignInProvider extends ChangeNotifier {
     }
   }
 
+  /// First step: send idToken only. Returns statusCode for the screen to decide next action.
+  Future<int?> googleSignIn(String idToken) async {
+    _isGoogleLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await getNetworkCaller(isPublic: true).postRequest(
+        url: Urls.googleAuthUrl,
+        body: {'idToken': idToken},
+      );
+
+      if (response.isSuccess) {
+        final statusCode = response.responseData['statusCode'] as int? ?? 0;
+
+        if (statusCode == 200) {
+          // Existing user — save data now
+          final data = response.responseData['data'];
+          final user = UserModel.fromJson(
+            data['user'] as Map<String, dynamic>,
+            token: data['accessToken'],
+            refreshToken: data['refreshToken'],
+          );
+          await AuthController.saveUserData(data['accessToken']?.toString() ?? '', user);
+          _user = user;
+          _errorMessage = null;
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('last_used_email', user.email);
+          ToastService.showSuccess("Welcome back ${user.firstName}!");
+        }
+        // statusCode == 202 means new user — screen will handle role selection
+
+        _isGoogleLoading = false;
+        notifyListeners();
+        return statusCode;
+      } else {
+        _errorMessage = response.errorMessage;
+        ToastService.showError(response.errorMessage ?? 'Google Sign-In failed');
+        _isGoogleLoading = false;
+        notifyListeners();
+        return null;
+      }
+    } catch (e) {
+      _errorMessage = e.toString();
+      ToastService.showError('An error occurred during Google sign in');
+      _isGoogleLoading = false;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  /// Second step: send idToken + role (for new users who got 202).
   Future<bool> completeGoogleSignIn(String idToken, String role) async {
     bool isSuccess = false;
     _isGoogleLoading = true;
     _errorMessage = null;
     notifyListeners();
 
-    final response = await getNetworkCaller(isPublic: true).postRequest(
-      url: Urls.googleAuthUrl,
-      body: {'idToken': idToken, 'role': role},
-    );
-
-    if (response.isSuccess) {
-      final data = response.responseData['data'];
-      final user = UserModel.fromJson(
-        data['user'] as Map<String, dynamic>,
-        token: data['accessToken'],
-        refreshToken: data['refreshToken'],
+    try {
+      final response = await getNetworkCaller(isPublic: true).postRequest(
+        url: Urls.googleAuthUrl,
+        body: {'idToken': idToken, 'role': role},
       );
-      await AuthController.saveUserData(data['accessToken']?.toString() ?? '', user);
-      _user = user;
-      _errorMessage = null;
-      isSuccess = true;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('last_used_email', user.email);
-      ToastService.showSuccess("Welcome ${user.firstName}!");
-    } else {
-      _errorMessage = response.errorMessage;
-      ToastService.showError(response.errorMessage ?? 'Google Sign-In failed');
+
+      if (response.isSuccess) {
+        final data = response.responseData['data'];
+        final user = UserModel.fromJson(
+          data['user'] as Map<String, dynamic>,
+          token: data['accessToken'],
+          refreshToken: data['refreshToken'],
+        );
+        await AuthController.saveUserData(data['accessToken']?.toString() ?? '', user);
+        _user = user;
+        _errorMessage = null;
+        isSuccess = true;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('last_used_email', user.email);
+        ToastService.showSuccess("Welcome ${user.firstName}!");
+      } else {
+        _errorMessage = response.errorMessage;
+        ToastService.showError(response.errorMessage ?? 'Google Sign-In failed');
+      }
+    } catch (e) {
+      _errorMessage = e.toString();
+      ToastService.showError('An error occurred during Google sign in');
     }
 
     _isGoogleLoading = false;

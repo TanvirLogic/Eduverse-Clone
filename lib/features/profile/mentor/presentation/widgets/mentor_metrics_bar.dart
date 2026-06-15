@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:edtech/app/app_colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../../../global/core/constants/images/images.dart';
-import 'package:edtech/app/app_colors.dart';
 
 /// Metrics bar showing video count, course count, and location.
 class MentorMetricsBar extends StatelessWidget {
@@ -24,7 +24,7 @@ class MentorMetricsBar extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         SvgPicture.asset(
-          Images.video_icon,
+          Images.videoIcon,
           width: 16,
           height: 16,
           colorFilter: ColorFilter.mode(
@@ -43,7 +43,7 @@ class MentorMetricsBar extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           SvgPicture.asset(
-            Images.book_icon,
+            Images.bookIcon,
             width: 16,
             height: 16,
             colorFilter: ColorFilter.mode(

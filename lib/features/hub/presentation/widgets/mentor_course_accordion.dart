@@ -1,3 +1,5 @@
+import 'package:edtech/global/core/constants/sizes.dart';
+import 'package:edtech/app/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../global/core/constants/images/images.dart';
@@ -15,7 +17,6 @@ class CourseAccordion extends StatelessWidget {
   final String? grossAmount;
   final String? platformFee;
   final String? netEarnings;
-
   CourseAccordion({
     required this.id,
     required this.title,
@@ -28,13 +29,11 @@ class CourseAccordion extends StatelessWidget {
     this.platformFee,
     this.netEarnings,
   }) : super(key: ValueKey(id));
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = cs.brightness == Brightness.dark;
     final hasContent = grossAmount != null;
-
     final header = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -55,28 +54,22 @@ class CourseAccordion extends StatelessWidget {
         ),
       ],
     );
-
     if (!hasContent) {
       return Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isDark ? cs.surfaceContainerLow : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-          color: cs.outlineVariant,
+          borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+          border: Border.all(color: cs.outlineVariant),
         ),
-      ),
-      child: header,
-    );
-  }
-
+        child: header,
+      );
+    }
     return Container(
       decoration: BoxDecoration(
         color: isDark ? cs.surfaceContainerLow : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: cs.outlineVariant,
-        ),
+        borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+        border: Border.all(color: cs.outlineVariant),
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -87,10 +80,10 @@ class CourseAccordion extends StatelessWidget {
           tilePadding: const EdgeInsets.all(12),
           childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
           collapsedShape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppSizes.radiusSm),
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppSizes.radiusSm),
           ),
           collapsedIconColor: cs.onSurface.withValues(alpha: 0.6),
           iconColor: cs.onSurface.withValues(alpha: 0.6),
@@ -114,20 +107,18 @@ class MetaBadgeRow extends StatelessWidget {
   final int videosCount;
   final int resourcesCount;
   final int studentsCount;
-
   const MetaBadgeRow({
     super.key,
     required this.videosCount,
     required this.resourcesCount,
     required this.studentsCount,
   });
-
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         MetaBadge(
-          icon: SvgPicture.asset(Images.video_icon, width: 16, height: 16),
+          icon: SvgPicture.asset(Images.videoIcon, width: 16, height: 16),
           label: '$videosCount Video',
         ),
         const SizedBox(width: 8),
@@ -148,9 +139,7 @@ class MetaBadgeRow extends StatelessWidget {
 class MetaBadge extends StatelessWidget {
   final Widget icon;
   final String label;
-
   const MetaBadge({super.key, required this.icon, required this.label});
-
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -158,14 +147,14 @@ class MetaBadge extends StatelessWidget {
       children: [
         icon,
         const SizedBox(width: 2),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
-            ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
           ),
+        ),
       ],
     );
   }
@@ -177,7 +166,6 @@ class ExpandedCourseContent extends StatelessWidget {
   final String? netEarnings;
   final bool isDark;
   final ColorScheme cs;
-
   const ExpandedCourseContent({
     super.key,
     required this.grossAmount,
@@ -186,7 +174,6 @@ class ExpandedCourseContent extends StatelessWidget {
     required this.isDark,
     required this.cs,
   });
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -194,8 +181,9 @@ class ExpandedCourseContent extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: cs.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(12),
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+            border: Border.all(color: AppColors.border),
           ),
           child: Column(
             children: [
@@ -224,14 +212,14 @@ class ExpandedCourseContent extends StatelessWidget {
                 FinancialRow(
                   label: 'Net Earnings',
                   value: netEarnings!,
-                  valueColor: cs.primary,
+                  valueColor: AppColors.themeColor,
                 ),
               ],
             ],
           ),
         ),
         const SizedBox(height: 12),
-      AuthButton(
+        AuthButton(
           text: 'Manage Module',
           onPressed: () => Navigator.pushNamed(context, AppRoutes.manageModule),
           height: 44,
@@ -246,14 +234,12 @@ class FinancialRow extends StatelessWidget {
   final String label;
   final String value;
   final Color valueColor;
-
   const FinancialRow({
     super.key,
     required this.label,
     required this.value,
     required this.valueColor,
   });
-
   @override
   Widget build(BuildContext context) {
     return Row(

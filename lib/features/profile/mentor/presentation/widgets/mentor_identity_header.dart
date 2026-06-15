@@ -39,7 +39,9 @@ class MentorIdentityHeader extends StatelessWidget {
         Text(
           role.isNotEmpty ? role : 'No Profession added yet',
           style: TextStyle(
-            color: role.isNotEmpty ? cs.onSurface : cs.onSurface.withValues(alpha: 0.4),
+            color: role.isNotEmpty
+                ? cs.onSurface
+                : cs.onSurface.withValues(alpha: 0.4),
             fontSize: 12,
             fontWeight: FontWeight.bold,
           ),

@@ -1,6 +1,8 @@
+import 'package:edtech/app/app_colors.dart';
 import 'package:edtech/global/core/constants/images/images.dart';
 import 'package:edtech/global/core/constants/sizes.dart';
 import 'package:edtech/global/core/widgets/auth_button.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
@@ -46,7 +48,7 @@ class _SocialPageState extends State<SocialPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Image.asset(Images.eduverseP, width: 113, height: 32),
-                SvgPicture.asset(Images.notification_icon),
+                SvgPicture.asset(Images.notificationIcon),
               ],
             ),
             const SizedBox(height: 16),
@@ -59,11 +61,11 @@ class _SocialPageState extends State<SocialPage> {
                 filled: true,
                 fillColor: isDark ? cs.surfaceContainerHighest : Colors.white,
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide(color: const Color(0xFFEFEFF0)),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusXl),
+                  borderSide: BorderSide(color: AppColors.border),
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusXl),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -141,16 +143,16 @@ class _VideoFeedCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isDark ? cs.surfaceContainerLow : Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
         border: Border.all(
-          color: const Color(0xFFEFEFF0),
+          color: AppColors.border,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppSizes.radiusMd),
             child: AspectRatio(
               aspectRatio: 1.75,
               child: Stack(
@@ -227,7 +229,7 @@ class _VideoFeedCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: cs.outlineVariant,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(AppSizes.radiusSm),
                           ),
                           child: Text(
                             timeAgo,
@@ -273,9 +275,9 @@ class _CreatorCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isDark ? cs.surfaceContainerLow : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppSizes.radiusLg2),
         border: Border.all(
-          color: const Color(0xFFEFEFF0),
+          color: AppColors.border,
         ),
       ),
       child: Row(
@@ -341,8 +343,8 @@ class _PromoBanner extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: cs.primary.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(20),
+          color: AppColors.themeColor.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(AppSizes.radiusLg2),
         ),
         child: Row(
           children: [
@@ -354,12 +356,12 @@ class _PromoBanner extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: cs.primary.withValues(alpha: 0.15),
+                      color: AppColors.themeColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       'Ad',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: cs.primary),
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.themeColor),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -368,7 +370,7 @@ class _PromoBanner extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
-                      color: cs.primary.withValues(alpha: 0.8),
+                      color: AppColors.themeColor.withValues(alpha: 0.8),
                       height: 1.2,
                     ),
                   ),
@@ -390,10 +392,10 @@ class _PromoBanner extends StatelessWidget {
               flex: 4,
               child: Container(
                 decoration: BoxDecoration(
-                  color: cs.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppColors.themeColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusSm),
                 ),
-                child: Icon(Icons.laptop_chromebook_rounded, color: cs.primary.withValues(alpha: 0.4), size: 40),
+                child: Icon(Icons.laptop_chromebook_rounded, color: AppColors.themeColor.withValues(alpha: 0.4), size: 40),
               ),
             ),
           ],

@@ -14,6 +14,15 @@ class CourseModule {
   String title;
   final List<Lesson> lessons;
   bool isExpanded;
+  final int order;
+  final int courseId;
 
-  CourseModule({required this.id, required this.title, this.lessons = const [], this.isExpanded = false});
+  CourseModule({
+    required this.id,
+    required this.title,
+    this.lessons = const [],
+    this.isExpanded = false,
+    this.order = 0,
+    this.courseId = 1,
+  });
 }

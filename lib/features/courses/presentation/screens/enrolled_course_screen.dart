@@ -93,7 +93,7 @@ class _EnrolledCourseBody extends StatelessWidget {
 
   Widget _buildThumbnail(ColorScheme cs, bool isDark, CourseEntity course) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(AppSizes.radiusMd),
       child: SizedBox(
         height: 184,
         child: Stack(
@@ -102,7 +102,7 @@ class _EnrolledCourseBody extends StatelessWidget {
               height: 184,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [cs.primary.withValues(alpha: 0.6), cs.primary.withValues(alpha: 0.2)],
+                  colors: [AppColors.themeColor.withValues(alpha: 0.6), AppColors.themeColor.withValues(alpha: 0.2)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -115,7 +115,7 @@ class _EnrolledCourseBody extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: isDark ? cs.surfaceContainerHighest : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusLg2),
                 ),
                 child: Text(
                   'by ${course.instructorName}',
@@ -170,25 +170,25 @@ class _CourseProgressCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: isDark ? cs.surfaceContainerHighest : Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppSizes.radiusMd),
             border: Border.all(
-              color: const Color(0xFFEFEFF0),
+              color: AppColors.border,
             ),
           ),
           child: Row(
             children: [
               Expanded(
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusXs),
                   child: SizedBox(
                     height: 12,
                     child: Stack(
                       children: [
-                        Container(color: isDark ? AppColors.themeColor : Colors.grey),
+                        Container(color: AppColors.fill),
                         FractionallySizedBox(
                           alignment: Alignment.centerLeft,
                           widthFactor: 0.35,
-                          child: Container(color: cs.primary),
+                          child: Container(color: AppColors.themeColor),
                         ),
                       ],
                     ),
@@ -201,7 +201,7 @@ class _CourseProgressCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: cs.primary,
+                  color: AppColors.themeColor,
                 ),
               ),
             ],
@@ -246,7 +246,7 @@ class _EnrolledTabContentViewState extends State<_EnrolledTabContentView> {
                   decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(
-                        color: isSelected ? AppColors.themeColor : const Color(0xFFEFEFF0),
+                        color: isSelected ? AppColors.themeColor : AppColors.border,
                         width: isSelected ? 2.5 : 1.0,
                       ),
                     ),
@@ -345,9 +345,9 @@ class _EnrolledModuleTabViewState extends State<_EnrolledModuleTabView> {
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
             color: isDark ? cs.surfaceContainerLow : Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppSizes.radiusMd),
             border: Border.all(
-              color: isDark ? cs.outlineVariant : const Color(0xFFEFEFF0),
+              color: isDark ? cs.outlineVariant : AppColors.border,
             ),
           ),
           child: Column(
@@ -362,11 +362,11 @@ class _EnrolledModuleTabViewState extends State<_EnrolledModuleTabView> {
                     }
                   });
                 },
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(AppSizes.radiusMd)),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: isDark ? cs.surfaceContainerHighest : const Color(0xFFF9F9F9),
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                    color: isDark ? cs.surfaceContainerHighest : AppColors.surface,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(AppSizes.radiusMd)),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
@@ -407,7 +407,7 @@ class _EnrolledModuleTabViewState extends State<_EnrolledModuleTabView> {
               if (isExpanded) ...[
                 Divider(
                   height: 1,
-                  color: const Color(0xFFEFEFF0),
+                  color: AppColors.border,
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),

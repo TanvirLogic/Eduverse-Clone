@@ -24,8 +24,6 @@ class _SplashScreenState extends State<SplashScreen> {
     await AuthController.getUserData();
     final provider = context.read<SignInProvider>();
 
-    await Future.delayed(const Duration(seconds: 3));
-
     final bool isLoggedIn = await provider.tryRefreshToken();
 
     if (mounted) {

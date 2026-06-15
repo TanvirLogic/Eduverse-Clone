@@ -8,6 +8,7 @@ class AuthButton extends StatelessWidget {
   final double height;
   final double borderRadius;
   final double? fontSize;
+  final double? width;
 
   const AuthButton({
     super.key,
@@ -17,19 +18,24 @@ class AuthButton extends StatelessWidget {
     this.height = 56,
     this.borderRadius = 30,
     this.fontSize,
+    this.width,
   });
 
   @override
   Widget build(BuildContext context) {
     final disabled = isLoading || onPressed == null;
     return SizedBox(
-      width: double.infinity,
+      width: width ?? double.infinity,
       height: height,
       child: Material(
         borderRadius: BorderRadius.circular(borderRadius),
         child: Ink(
           decoration: BoxDecoration(
-            color: AppColors.themeColor,
+            gradient: const LinearGradient(
+              colors: [AppColors.gradientStart, AppColors.gradientEnd],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
             borderRadius: BorderRadius.circular(borderRadius),
           ),
           child: InkWell(

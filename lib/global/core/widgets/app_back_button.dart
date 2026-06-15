@@ -1,3 +1,4 @@
+import 'package:edtech/app/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class AppBackButton extends StatelessWidget {
@@ -8,19 +9,14 @@ class AppBackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isDark = cs.brightness == Brightness.dark;
-    final bg = isDark
-        ? cs.surfaceContainerHighest
-        : const Color(0xFFF5F5F5);
-    return Container(
-      decoration: BoxDecoration(
-        color: bg,
-        shape: BoxShape.circle,
-        border: Border.all(color: isDark ? cs.outlineVariant : const Color(0xFFEFEFF0)),
-      ),
+    final iconBg = cs.brightness == Brightness.light
+        ? AppColors.fill
+        : cs.surfaceContainerHighest;
+    return CircleAvatar(
+      backgroundColor: iconBg,
       child: IconButton(
-        icon: Icon(Icons.keyboard_arrow_left, color: cs.onSurface),
-        onPressed: onPressed ?? () => Navigator.pop(context),
+        icon: Icon(Icons.arrow_back_ios_new, size: 14, color: cs.onSurface),
+        onPressed: onPressed ?? () => Navigator.maybePop(context),
       ),
     );
   }

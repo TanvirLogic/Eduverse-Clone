@@ -12,4 +12,14 @@ class ReviewEntity {
     required this.comment,
     required this.imageUrl,
   });
+
+  factory ReviewEntity.fromJson(Map<String, dynamic> json) {
+    return ReviewEntity(
+      name: json['name'] ?? '',
+      timeAgo: json['time_ago'] ?? json['timeAgo'] ?? '',
+      rating: (json['rating'] ?? 0) is int ? json['rating'] as int : int.tryParse(json['rating']?.toString() ?? '') ?? 0,
+      comment: json['comment'] ?? '',
+      imageUrl: json['image_url'] ?? json['imageUrl'] ?? '',
+    );
+  }
 }

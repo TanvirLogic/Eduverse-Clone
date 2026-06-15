@@ -1,7 +1,8 @@
+import 'package:edtech/app/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:edtech/global/core/constants/sizes.dart';
-import 'package:edtech/app/app_colors.dart';
+
 import 'package:edtech/global/core/widgets/app_back_button.dart';
 
 class PaymentsAndRevenueScreen extends StatelessWidget {
@@ -47,7 +48,7 @@ class PaymentsAndRevenueScreen extends StatelessWidget {
                       label: 'Total In',
                       amount: '৳9640',
                       iconPath: 'assets/images/revenue_icons/total_in.svg',
-                      iconColor: cs.primary,
+                      iconColor: AppColors.themeColor,
                       cs: cs,
                       isDark: isDark,
                     ),
@@ -83,7 +84,7 @@ class PaymentsAndRevenueScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: AppColors.themeColor,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(AppSizes.radiusLg2),
                     ),
                     child: Row(
                       children: [
@@ -185,9 +186,9 @@ class _MetricCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? cs.surfaceContainerLow : Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
         border: Border.all(
-          color: const Color(0xFFEFEFF0),
+          color: AppColors.border,
         ),
       ),
       child: Row(
@@ -269,7 +270,7 @@ class _FilterPillRowState extends State<_FilterPillRow> {
                 border: Border.all(
                   color: isSelected
                       ? AppColors.themeColor
-                      : const Color(0xFFEFEFF0),
+                      : AppColors.border,
                 ),
               ),
               child: Text(
@@ -318,9 +319,9 @@ class _TransactionCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? cs.surfaceContainerLow : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
         border: Border.all(
-          color: const Color(0xFFEFEFF0),
+          color: AppColors.border,
         ),
       ),
       child: _TransactionTile(

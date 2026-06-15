@@ -28,7 +28,7 @@ class CoursesScreen extends StatelessWidget {
                 GestureDetector(
                   onTap: () => Navigator.pushNamed(context, AppRoutes.notifications),
                   onLongPress: () {},
-                  child: SvgPicture.asset(Images.notification_icon),
+                  child: SvgPicture.asset(Images.notificationIcon),
                 ),
               ],
             ),
@@ -41,11 +41,11 @@ class CoursesScreen extends StatelessWidget {
                 filled: true,
                 fillColor: isDark ? cs.surfaceContainerHighest : Colors.white,
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide(color: const Color(0xFFEFEFF0)),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusXl),
+                  borderSide: BorderSide(color: AppColors.border),
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusXl),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -128,9 +128,9 @@ class _MyCourseCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? cs.surfaceContainerLow : Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppSizes.radiusSm),
         border: Border.all(
-          color: const Color(0xFFEFEFF0),
+          color: AppColors.border,
         ),
       ),
       child: Padding(
@@ -139,13 +139,13 @@ class _MyCourseCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSizes.radiusSm),
               child: SizedBox(
                 width: double.infinity,
                 height: 85,
                 child: Stack(
                   children: [
-                    Container(color: cs.primary.withValues(alpha: 0.15)),
+                    Container(color: AppColors.themeColor.withValues(alpha: 0.15)),
                     Positioned(
                       bottom: 8,
                       left: 6,
@@ -247,9 +247,10 @@ class _MyCourseCard extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size(56, 22),
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      backgroundColor: cs.surfaceContainerHighest,
+                      backgroundColor: AppColors.surface,
                       foregroundColor: isDark ? Colors.white : AppColors.primaryText,
                       elevation: 0,
+                      side: const BorderSide(color: AppColors.border),
                     ),
                     child: const Text('Continue', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),
                   ),
@@ -276,15 +277,15 @@ class _RecommendedCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? cs.surfaceContainerLow : Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFEFEFF0)),
+          borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+          border: Border.all(color: AppColors.border),
         ),
         padding: const EdgeInsets.all(12),
         child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppSizes.radiusMd),
             child: SizedBox(
               height: 184,
               child: Stack(
@@ -293,7 +294,7 @@ class _RecommendedCard extends StatelessWidget {
                     height: 184,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [cs.primary.withValues(alpha: 0.6), cs.primary.withValues(alpha: 0.2)],
+                        colors: [AppColors.themeColor.withValues(alpha: 0.6), AppColors.themeColor.withValues(alpha: 0.2)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -306,7 +307,7 @@ class _RecommendedCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(AppSizes.radiusLg2),
                       ),
                       child: Text(
                         'by Sarah Wilson',
@@ -321,7 +322,7 @@ class _RecommendedCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.9),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppSizes.radiusSm),
                       ),
                       child: Row(
                         children: [

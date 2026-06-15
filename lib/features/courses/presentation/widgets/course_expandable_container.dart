@@ -30,7 +30,7 @@ class CourseExpandableContainer extends StatelessWidget {
           Container(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
             decoration: BoxDecoration(
-              color: cs.surfaceContainerHighest,
+              color: const Color(0xFFF9F9F9),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Text(

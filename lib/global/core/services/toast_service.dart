@@ -1,79 +1,65 @@
 import 'package:flutter/material.dart';
+import 'package:edtech/app/app_colors.dart';
 
-/// Global SnackBar messenger — replaces deprecated fluttertoast.
-///
-/// Uses a [GlobalKey] wired to MaterialApp.scaffoldMessengerKey so providers
-/// (which have no BuildContext) can show floating SnackBars anywhere.
 class ToastService {
-  static final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
-      GlobalKey<ScaffoldMessengerState>();
+  static OverlayState? _overlay;
 
-  static final List<_QueuedToast> _pendingToasts = [];
-  static bool _flushScheduled = false;
+  static void initOverlay(OverlayState overlay) {
+    _overlay = overlay;
+  }
+
+  static OverlayEntry? _currentEntry;
 
   static void showSuccess(String message) {
-    _showSnackBar(message, Colors.green);
+    _showToast(message, AppColors.themeColor, Colors.white);
   }
 
   static void showError(String message) {
-    final safeMessage = friendlyMessage(message);
-    _showSnackBar(safeMessage, Colors.redAccent);
+    _showToast(friendlyMessage(message), const Color(0xFFFEE2E2), Colors.black);
   }
 
   static void showInfo(String message) {
-    _showSnackBar(message, Colors.blueAccent);
+    _showToast(message, AppColors.themeColor, AppColors.surface);
   }
 
-  /// Shows a rounded, floating SnackBar at the bottom via the global key.
-  static void _showSnackBar(String message, Color backgroundColor) {
-    final messenger = scaffoldMessengerKey.currentState;
-    if (messenger == null) {
-      _enqueueToast(message, backgroundColor);
-      return;
-    }
-
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: backgroundColor,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 3),
+  static void _showToast(
+    String message,
+    Color backgroundColor,
+    Color textColor,
+  ) {
+    _currentEntry?.remove();
+    _currentEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).padding.top + 16,
+        left: 0,
+        right: 0,
+        child: Material(
+          color: Colors.transparent,
+          child: Align(
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.75,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: textColor, fontSize: 14),
+              ),
+            ),
+          ),
+        ),
       ),
     );
-  }
-
-  static void _enqueueToast(String message, Color backgroundColor) {
-    _pendingToasts.add(_QueuedToast(message, backgroundColor));
-    if (_flushScheduled) return;
-    _flushScheduled = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _flushScheduled = false;
-      _flushPendingToasts();
+    _overlay?.insert(_currentEntry!);
+    Future.delayed(const Duration(seconds: 3), () {
+      _currentEntry?.remove();
+      _currentEntry = null;
     });
   }
 
-  static void _flushPendingToasts() {
-    final messenger = scaffoldMessengerKey.currentState;
-    if (messenger == null) return;
-
-    for (final toast in List<_QueuedToast>.from(_pendingToasts)) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(toast.message),
-          backgroundColor: toast.backgroundColor,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    }
-    _pendingToasts.clear();
-  }
-
-  /// Returns a user-friendly message for raw error text.
   static String friendlyMessage(String rawMessage) {
     return _getFriendlyMessage(rawMessage);
   }
@@ -137,11 +123,4 @@ class ToastService {
 
     return rawMessage;
   }
-}
-
-class _QueuedToast {
-  final String message;
-  final Color backgroundColor;
-
-  _QueuedToast(this.message, this.backgroundColor);
 }

@@ -1,3 +1,4 @@
+import 'package:edtech/global/core/constants/sizes.dart';
 import 'package:edtech/app/app_colors.dart';
 import 'package:flutter/material.dart';
 
@@ -13,7 +14,7 @@ Future<AvatarOption?> showAvatarOptionsBottomSheet({
   return showModalBottomSheet<AvatarOption>(
     context: context,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.radiusLg2)),
     ),
     builder: (context) {
       final cs = Theme.of(context).colorScheme;
@@ -79,7 +80,7 @@ class _OptionTile extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppSizes.radiusSm),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
@@ -89,8 +90,8 @@ class _OptionTile extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: cs.primary.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppColors.themeColor.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusSm),
                 ),
                 child: Center(child: icon),
               ),

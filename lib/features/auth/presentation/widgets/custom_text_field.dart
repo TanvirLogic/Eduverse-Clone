@@ -1,3 +1,6 @@
+import 'package:edtech/app/app_colors.dart';
+import 'package:edtech/global/core/constants/sizes.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -90,19 +93,19 @@ class CustomTextField extends StatelessWidget {
             suffixIcon: suffixIcon,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
-              borderSide: const BorderSide(color: Color(0xFFEFEFF0), width: 1),
+              borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+              borderSide: const BorderSide(color: AppColors.border, width: 1),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide(color: cs.primary, width: 1.5),
+              borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+              borderSide: BorderSide(color: AppColors.themeColor, width: 1.5),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(AppSizes.radiusDef),
               borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(AppSizes.radiusDef),
               borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
             ),
             errorStyle: const TextStyle(fontSize: 12, color: Colors.redAccent),

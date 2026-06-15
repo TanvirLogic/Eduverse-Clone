@@ -1,4 +1,5 @@
 import 'package:edtech/global/core/constants/sizes.dart';
+import 'package:edtech/global/core/widgets/app_alert_dialog.dart';
 import 'package:edtech/features/auth/data/models/auth_controller.dart';
 import 'package:edtech/features/auth/providers/sign_in_provider.dart';
 import 'package:edtech/features/profile/mentor/providers/mentor_profile_provider.dart';
@@ -47,26 +48,12 @@ class _HubScreenState extends State<HubScreen> {
   }
 
   Future<void> _showLogoutDialog(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await AppAlertDialog.show(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(
-              'Logout',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          ),
-        ],
-      ),
+      title: 'Logout',
+      content: 'Are you sure you want to logout?',
+      confirmText: 'Logout',
+      cancelText: 'Cancel',
     );
     if (confirmed == true) {
       context.read<StudentProfileProvider>().clearProfile();

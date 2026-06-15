@@ -1,3 +1,4 @@
+import 'package:edtech/global/core/constants/sizes.dart';
 import 'package:flutter/material.dart';
 import 'package:edtech/app/app_colors.dart';
 
@@ -12,7 +13,7 @@ class BalanceBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
       decoration: BoxDecoration(
         color: AppColors.themeColor,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
       ),
       child: Row(
         children: [
@@ -52,7 +53,7 @@ class BalanceBanner extends StatelessWidget {
                 minimumSize: const Size(0, 44),
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusLg2),
                 ),
               ),
               child: const Text(

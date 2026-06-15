@@ -10,6 +10,30 @@ class ChangePasswordProvider extends ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
+  Future<bool> changeEmail(String newEmail) async {
+    bool isSuccess = false;
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    final response = await getNetworkCaller().postRequest(
+      url: Urls.profileEmailUrl,
+      body: {'email': newEmail},
+    );
+
+    if (response.isSuccess) {
+      isSuccess = true;
+      ToastService.showSuccess('Email change requested. Check your new inbox.');
+    } else {
+      _errorMessage = response.errorMessage;
+      ToastService.showError(response.errorMessage ?? 'Failed to change email');
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return isSuccess;
+  }
+
   Future<bool> changePassword(String currentPassword, String newPassword) async {
     bool isSuccess = false;
     _isLoading = true;

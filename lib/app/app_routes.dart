@@ -70,11 +70,11 @@ class AppRoutes {
       case verification:
         final args = settings.arguments as Map?;
         final email = (args?['email'] as String?) ?? '';
-        return MaterialPageRoute(
-          builder: (_) => VerifyOtpScreen(email: email),
-        );
+        return MaterialPageRoute(builder: (_) => VerifyOtpScreen(email: email));
       case resetVerification:
-        return MaterialPageRoute(builder: (_) => const ResetVerificationScreen());
+        return MaterialPageRoute(
+          builder: (_) => const ResetVerificationScreen(),
+        );
       case resetPassword:
         return MaterialPageRoute(builder: (_) => const SetNewPasswordScreen());
       case home:
@@ -98,9 +98,13 @@ class AppRoutes {
       case paymentSuccess:
         return MaterialPageRoute(builder: (_) => const PaymentSuccessScreen());
       case passwordAndSecurity:
-        return MaterialPageRoute(builder: (_) => const PasswordAndSecurityScreen());
+        return MaterialPageRoute(
+          builder: (_) => const PasswordAndSecurityScreen(),
+        );
       case paymentsAndRevenue:
-        return MaterialPageRoute(builder: (_) => const PaymentsAndRevenueScreen());
+        return MaterialPageRoute(
+          builder: (_) => const PaymentsAndRevenueScreen(),
+        );
       case mentorDashboard:
         return MaterialPageRoute(builder: (_) => const MentorDashboardScreen());
       case notifications:

@@ -1,4 +1,6 @@
+import 'package:edtech/global/core/constants/sizes.dart';
 import 'package:edtech/app/app_colors.dart';
+
 import 'package:flutter/material.dart';
 
 class LessonRow extends StatelessWidget {
@@ -27,19 +29,19 @@ class LessonRow extends StatelessWidget {
       return Container(
         height: 56,
         decoration: BoxDecoration(
-          color: isDark ? cs.surfaceContainerHighest : const Color(0xFFF9F9F9),
-          borderRadius: BorderRadius.circular(12),
+          color: isDark ? cs.surfaceContainerHighest : AppColors.surface,
+          borderRadius: BorderRadius.circular(AppSizes.radiusSm),
         ),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppSizes.radiusSm),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
                 CircleAvatar(
                   radius: 18,
-                  backgroundColor: isDark ? cs.outlineVariant : const Color(0xFFEFEFF0),
+                  backgroundColor: isDark ? cs.outlineVariant : AppColors.border,
                   child: Icon(
                     Icons.play_arrow_rounded,
                     size: 18,
@@ -84,19 +86,19 @@ class LessonRow extends StatelessWidget {
     return Container(
       height: 56,
       decoration: BoxDecoration(
-        color: isDark ? cs.surfaceContainerHighest : const Color(0xFFF9F9F9),
-        borderRadius: BorderRadius.circular(12),
+        color: isDark ? cs.surfaceContainerHighest : AppColors.surface,
+        borderRadius: BorderRadius.circular(AppSizes.radiusSm),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppSizes.radiusSm),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: isDark ? cs.outlineVariant : const Color(0xFFEFEFF0),
+                backgroundColor: isDark ? cs.outlineVariant : AppColors.border,
                 child: Icon(
                   isEnrolled ? Icons.play_arrow_rounded : Icons.lock_outline_rounded,
                   size: 18,

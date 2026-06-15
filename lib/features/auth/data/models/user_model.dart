@@ -33,12 +33,42 @@ class UserModel extends UserEntity {
       avatarUrl: json['avatar_url'],
       city: json['city'],
       role: json['role'] is int
-          ? json['role'] as int
+          ? (json['role'] == 1 ? UserRole.mentor : UserRole.student)
           : json['role'] is String
-          ? (json['role'] == 'MENTOR' ? 1 : 0)
+          ? (json['role'] == 'MENTOR' ? UserRole.mentor : UserRole.student)
           : null,
       emailVerified: json['email_verified'],
       phoneVerified: json['phone_verified'],
+    );
+  }
+
+  UserModel copyWith({
+    String? id,
+    String? email,
+    String? firstName,
+    String? lastName,
+    String? token,
+    String? refreshToken,
+    String? phone,
+    String? avatarUrl,
+    String? city,
+    UserRole? role,
+    bool? emailVerified,
+    bool? phoneVerified,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      email: email ?? this.email,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      token: token ?? this.token,
+      refreshToken: refreshToken ?? this.refreshToken,
+      phone: phone ?? this.phone,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      city: city ?? this.city,
+      role: role ?? this.role,
+      emailVerified: emailVerified ?? this.emailVerified,
+      phoneVerified: phoneVerified ?? this.phoneVerified,
     );
   }
 
@@ -53,7 +83,7 @@ class UserModel extends UserEntity {
       'phone': phone,
       'avatar_url': avatarUrl,
       'city': city,
-      'role': role,
+      'role': role?.name.toUpperCase(),
       'email_verified': emailVerified,
       'phone_verified': phoneVerified,
     };

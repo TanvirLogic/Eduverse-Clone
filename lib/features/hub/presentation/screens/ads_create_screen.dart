@@ -1,6 +1,8 @@
+import 'package:edtech/app/app_colors.dart';
+import 'package:edtech/global/core/widgets/cancel_button.dart';
 import 'package:flutter/material.dart';
 import 'package:edtech/global/core/constants/sizes.dart';
-import 'package:edtech/app/app_colors.dart';
+
 import 'package:edtech/global/core/widgets/app_back_button.dart';
 import 'package:edtech/global/core/widgets/auth_button.dart';
 import 'package:edtech/features/courses/presentation/widgets/upload_zone.dart';
@@ -127,23 +129,8 @@ class _AdsCreateScreenState extends State<AdsCreateScreen> {
                     const SizedBox(height: 12),
                     SizedBox(
                       height: 50,
-                      child: TextButton(
+                      child: CancelButton(
                         onPressed: () => Navigator.maybePop(context),
-                        style: TextButton.styleFrom(
-                          backgroundColor: cs.surfaceContainerHighest,
-                          foregroundColor:
-                              isDark ? Colors.white70 : cs.onSurface.withValues(alpha: 0.6),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                        ),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
                       ),
                     ),
                   ],
@@ -201,7 +188,7 @@ class _AdsCreateScreenState extends State<AdsCreateScreen> {
             : cs.outlineVariant,
         width: 1,
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radiusLg2)),
       showCheckmark: false,
     );
   }
@@ -211,7 +198,7 @@ class _AdsCreateScreenState extends State<AdsCreateScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -246,9 +233,9 @@ class _AdsCreateScreenState extends State<AdsCreateScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: isDark ? cs.surfaceContainerLow : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
         border: Border.all(
-          color: const Color(0xFFEFEFF0),
+          color: AppColors.border,
         ),
       ),
       child: Column(
@@ -348,16 +335,16 @@ class _AdsTextField extends StatelessWidget {
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: const Color(0xFFEFEFF0)),
+          borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+          borderSide: BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: const Color(0xFFEFEFF0)),
+          borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+          borderSide: BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: const BorderSide(color: AppColors.themeColor, width: 1),
+          borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+          borderSide: BorderSide(color: AppColors.themeColor, width: 1),
         ),
       ),
     );

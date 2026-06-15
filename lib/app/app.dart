@@ -14,6 +14,8 @@ import 'package:edtech/features/courses/providers/course_detail_provider.dart';
 import 'package:edtech/features/courses/providers/course_list_provider.dart';
 import 'package:edtech/features/courses/providers/course_upload_provider.dart';
 import 'package:edtech/features/courses/providers/enrolled_course_provider.dart';
+import 'package:edtech/features/courses/providers/video_post_provider.dart';
+import 'package:edtech/features/courses/providers/video_queue_upload_provider.dart';
 import 'package:edtech/features/hub/providers/change_password_provider.dart';
 import 'package:edtech/global/core/services/toast_service.dart';
 import 'package:flutter/material.dart';
@@ -46,6 +48,8 @@ class App extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CourseUploadProvider()),
         ChangeNotifierProvider(create: (_) => EnrolledCourseProvider()),
         ChangeNotifierProvider(create: (_) => ChangePasswordProvider()),
+        ChangeNotifierProvider(create: (_) => VideoPostProvider()),
+        ChangeNotifierProvider(create: (_) => VideoQueueUploadProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) => MaterialApp(
@@ -54,10 +58,18 @@ class App extends StatelessWidget {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: themeProvider.currentThemeMode,
-          scaffoldMessengerKey: ToastService.scaffoldMessengerKey,
           navigatorKey: App.navigatorKey,
           onGenerateRoute: AppRoutes.onGenerateRoute,
           initialRoute: AppRoutes.splash,
+          builder: (context, child) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              final overlay = App.navigatorKey.currentState?.overlay;
+              if (overlay != null) {
+                ToastService.initOverlay(overlay);
+              }
+            });
+            return child!;
+          },
         ),
       ),
     );

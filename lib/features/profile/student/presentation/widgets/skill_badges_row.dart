@@ -1,3 +1,5 @@
+import 'package:edtech/app/app_colors.dart';
+import 'package:edtech/global/core/constants/sizes.dart';
 import 'package:flutter/material.dart';
 import '../../../../../../global/core/constants/images/images.dart';
 
@@ -24,8 +26,8 @@ class SkillBadgesRow extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: scBg,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFEFEFF0), width: 1),
+                borderRadius: BorderRadius.circular(AppSizes.radiusLg2),
+                border: Border.all(color: AppColors.border, width: 1),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -39,7 +41,7 @@ class SkillBadgesRow extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  Image.asset(Images.blue_tick, width: 18, height: 18),
+                  Image.asset(Images.blueTick, width: 18, height: 18),
                 ],
               ),
             ),
