@@ -3,7 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:edtech/global/core/constants/images/images.dart';
 import 'package:edtech/app/app_colors.dart';
 import 'package:edtech/global/core/widgets/swipe_action_widget.dart';
-import 'package:edtech/features/courses/presentation/models/manage_module_models.dart';
+import 'package:edtech/features/manage_module/data/manage_module_models.dart';
 
 class ModuleCard extends StatelessWidget {
   final CourseModule module;

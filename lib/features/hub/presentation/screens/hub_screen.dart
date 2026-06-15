@@ -43,8 +43,7 @@ class _HubScreenState extends State<HubScreen> {
       } else {
         context.read<StudentProfileProvider>().fetchProfile();
       }
-    } catch (_) {
-    }
+    } catch (_) {}
   }
 
   Future<void> _showLogoutDialog(BuildContext context) async {
@@ -75,7 +74,8 @@ class _HubScreenState extends State<HubScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = cs.brightness == Brightness.dark;
-    final profile = context.watch<StudentProfileProvider>().profile ??
+    final profile =
+        context.watch<StudentProfileProvider>().profile ??
         context.watch<MentorProfileProvider>().profile;
 
     if (profile == null && !_fetchTriggered) {
@@ -84,7 +84,12 @@ class _HubScreenState extends State<HubScreen> {
 
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.only(left: AppSizes.horizontalPadding, right: AppSizes.horizontalPadding, top: 8, bottom: 24),
+        padding: const EdgeInsets.only(
+          left: AppSizes.horizontalPadding,
+          right: AppSizes.horizontalPadding,
+          top: 8,
+          bottom: 24,
+        ),
         physics: const BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -111,7 +116,10 @@ class _HubScreenState extends State<HubScreen> {
                 _MenuRowTile(
                   iconAsset: Images.hubPasswordSecurity,
                   label: 'Password & Security',
-                  onTap: () => Navigator.pushNamed(context, AppRoutes.passwordAndSecurity),
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    AppRoutes.passwordAndSecurity,
+                  ),
                   cs: cs,
                   isDark: isDark,
                   isGeneral: true,
@@ -125,9 +133,35 @@ class _HubScreenState extends State<HubScreen> {
               cs: cs,
               isDark: isDark,
               children: [
-                _MenuRowTile(iconAsset: Images.hubMentorDashboard, label: 'Mentor Dashboard', onTap: () => Navigator.pushNamed(context, AppRoutes.mentorDashboard), cs: cs, isDark: isDark, isGeneral: true),
-                _MenuRowTile(iconAsset: Images.hubTransaction, label: 'Transactions & Revenue', onTap: () => Navigator.pushNamed(context, AppRoutes.paymentsAndRevenue), cs: cs, isDark: isDark, isGeneral: true),
-                _MenuRowTile(iconAsset: Images.hubAdAccount, label: 'Ad Account', onTap: () => Navigator.pushNamed(context, AppRoutes.adsManager), cs: cs, isDark: isDark, isGeneral: true),
+                _MenuRowTile(
+                  iconAsset: Images.hubMentorDashboard,
+                  label: 'Mentor Dashboard',
+                  onTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.mentorDashboard),
+                  cs: cs,
+                  isDark: isDark,
+                  isGeneral: true,
+                ),
+                _MenuRowTile(
+                  iconAsset: Images.hubTransaction,
+                  label: 'Transactions & Revenue',
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    AppRoutes.paymentsAndRevenue,
+                  ),
+                  cs: cs,
+                  isDark: isDark,
+                  isGeneral: true,
+                ),
+                _MenuRowTile(
+                  iconAsset: Images.hubAdAccount,
+                  label: 'Ad Account',
+                  onTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.adsManager),
+                  cs: cs,
+                  isDark: isDark,
+                  isGeneral: true,
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -146,8 +180,22 @@ class _HubScreenState extends State<HubScreen> {
                   isDark: isDark,
                   isGeneral: true,
                 ),
-                _ToggleRowTile(iconAsset: Images.hubNotification, label: 'Notification', value: true, cs: cs, isDark: isDark, isGeneral: true),
-                _ToggleRowTile(iconAsset: Images.hubMail, label: 'Email Notification', value: false, cs: cs, isDark: isDark, isGeneral: true),
+                _ToggleRowTile(
+                  iconAsset: Images.hubNotification,
+                  label: 'Notification',
+                  value: true,
+                  cs: cs,
+                  isDark: isDark,
+                  isGeneral: true,
+                ),
+                _ToggleRowTile(
+                  iconAsset: Images.hubMail,
+                  label: 'Email Notification',
+                  value: false,
+                  cs: cs,
+                  isDark: isDark,
+                  isGeneral: true,
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -157,9 +205,28 @@ class _HubScreenState extends State<HubScreen> {
               cs: cs,
               isDark: isDark,
               children: [
-                _MenuRowTile(icon: Icons.help_outline_rounded, label: 'Terms & Policy', cs: cs, isDark: isDark, isGeneral: true),
-                _MenuRowTile(icon: Icons.headset_mic_outlined, label: 'Help Center', cs: cs, isDark: isDark, isGeneral: true),
-                _MenuRowTile(icon: Icons.phone_android_rounded, label: 'App Version', trailingText: 'v 2.37.0', cs: cs, isDark: isDark, isGeneral: true),
+                _MenuRowTile(
+                  icon: Icons.help_outline_rounded,
+                  label: 'Terms & Policy',
+                  cs: cs,
+                  isDark: isDark,
+                  isGeneral: true,
+                ),
+                _MenuRowTile(
+                  icon: Icons.headset_mic_outlined,
+                  label: 'Help Center',
+                  cs: cs,
+                  isDark: isDark,
+                  isGeneral: true,
+                ),
+                _MenuRowTile(
+                  icon: Icons.phone_android_rounded,
+                  label: 'App Version',
+                  trailingText: 'v 2.37.0',
+                  cs: cs,
+                  isDark: isDark,
+                  isGeneral: true,
+                ),
               ],
             ),
             const SizedBox(height: 32),
@@ -225,7 +292,9 @@ class _HubHeader extends StatelessWidget {
           CircleAvatar(
             radius: 24,
             backgroundColor: cs.outlineVariant,
-            backgroundImage: avatarUrl != null ? CachedNetworkImageProvider(avatarUrl) : null,
+            backgroundImage: avatarUrl != null
+                ? CachedNetworkImageProvider(avatarUrl)
+                : null,
             child: avatarUrl == null
                 ? Text(
                     name.isNotEmpty ? name[0].toUpperCase() : 'U',
@@ -340,9 +409,13 @@ class _MenuRowTile extends StatelessWidget {
           height: 56,
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: isDark ? cs.surfaceContainerHighest : const Color(0xFFF9F9F9),
+            color: isDark
+                ? cs.surfaceContainerHighest
+                : const Color(0xFFF9F9F9),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: isDark ? cs.outlineVariant : const Color(0xFFEFEFF0)),
+            border: Border.all(
+              color: isDark ? cs.outlineVariant : const Color(0xFFEFEFF0),
+            ),
           ),
           child: Row(
             children: [
@@ -467,7 +540,8 @@ class _ToggleRowTile extends StatefulWidget {
 class _ToggleRowTileState extends State<_ToggleRowTile> {
   late bool _toggle;
 
-  bool get _effectiveValue => widget.onChanged != null ? (widget.value ?? false) : _toggle;
+  bool get _effectiveValue =>
+      widget.onChanged != null ? (widget.value ?? false) : _toggle;
 
   @override
   void initState() {
@@ -487,7 +561,11 @@ class _ToggleRowTileState extends State<_ToggleRowTile> {
               BlendMode.srcIn,
             ),
           )
-        : Icon(widget.icon, size: 20, color: widget.cs.onSurface.withValues(alpha: 0.6));
+        : Icon(
+            widget.icon,
+            size: 20,
+            color: widget.cs.onSurface.withValues(alpha: 0.6),
+          );
 
     if (widget.isGeneral) {
       return Container(
@@ -495,9 +573,15 @@ class _ToggleRowTileState extends State<_ToggleRowTile> {
         height: 56,
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: widget.isDark ? widget.cs.surfaceContainerHighest : const Color(0xFFF9F9F9),
+          color: widget.isDark
+              ? widget.cs.surfaceContainerHighest
+              : const Color(0xFFF9F9F9),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: widget.isDark ? widget.cs.outlineVariant : const Color(0xFFEFEFF0)),
+          border: Border.all(
+            color: widget.isDark
+                ? widget.cs.outlineVariant
+                : const Color(0xFFEFEFF0),
+          ),
         ),
         child: Row(
           children: [
@@ -505,7 +589,9 @@ class _ToggleRowTileState extends State<_ToggleRowTile> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: widget.isDark ? widget.cs.outlineVariant : const Color(0xFFEFEFF0),
+                color: widget.isDark
+                    ? widget.cs.outlineVariant
+                    : const Color(0xFFEFEFF0),
                 shape: BoxShape.circle,
               ),
               child: Center(child: iconWidget),
@@ -543,7 +629,9 @@ class _ToggleRowTileState extends State<_ToggleRowTile> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
-        color: widget.isDark ? widget.cs.surfaceContainerHighest : const Color(0xFFF5F5F5),
+        color: widget.isDark
+            ? widget.cs.surfaceContainerHighest
+            : const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -552,7 +640,9 @@ class _ToggleRowTileState extends State<_ToggleRowTile> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: widget.isDark ? widget.cs.outlineVariant : const Color(0xFFEFEFF0),
+              color: widget.isDark
+                  ? widget.cs.outlineVariant
+                  : const Color(0xFFEFEFF0),
               shape: BoxShape.circle,
             ),
             child: Center(child: iconWidget),
@@ -602,9 +692,7 @@ class _LogoutButton extends StatelessWidget {
         minimumSize: const Size(double.infinity, 54),
         backgroundColor: const Color(0xFFFCF3F3),
         side: const BorderSide(color: Color(0xFFEBADAD)),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         elevation: 0,
       ),
       child: Row(
@@ -619,11 +707,7 @@ class _LogoutButton extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          SvgPicture.asset(
-            Images.logout,
-            width: 18,
-            height: 18,
-          ),
+          SvgPicture.asset(Images.logout, width: 18, height: 18),
         ],
       ),
     );

@@ -1,19 +1,34 @@
-import '../../data/entities/user_entity.dart';
+class UserModel {
+  final String id;
+  final String email;
+  final String firstName;
+  final String lastName;
+  final String? token;
+  final String? refreshToken;
+  final String? phone;
+  final String? avatarUrl;
+  final String? city;
+  final UserRole? role;
+  final bool? emailVerified;
+  final bool? phoneVerified;
 
-class UserModel extends UserEntity {
+  String get fullName => '$firstName $lastName'.trim();
+  bool get isMentor => role == UserRole.mentor;
+  bool get isStudent => role == UserRole.student;
+
   const UserModel({
-    required super.id,
-    required super.email,
-    required super.firstName,
-    required super.lastName,
-    super.token,
-    super.refreshToken,
-    super.phone,
-    super.avatarUrl,
-    super.city,
-    super.role,
-    super.emailVerified,
-    super.phoneVerified,
+    required this.id,
+    required this.email,
+    required this.firstName,
+    required this.lastName,
+    this.token,
+    this.refreshToken,
+    this.phone,
+    this.avatarUrl,
+    this.city,
+    this.role,
+    this.emailVerified,
+    this.phoneVerified,
   });
 
   factory UserModel.fromJson(
@@ -89,3 +104,5 @@ class UserModel extends UserEntity {
     };
   }
 }
+
+enum UserRole { student, mentor }

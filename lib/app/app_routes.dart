@@ -12,7 +12,7 @@ import 'package:edtech/features/courses/presentation/screens/enrolled_course_scr
 import 'package:edtech/features/courses/presentation/screens/payment_success_screen.dart';
 import 'package:edtech/features/courses/presentation/screens/upload_course_screen.dart';
 import 'package:edtech/features/courses/presentation/screens/upload_video_screen.dart';
-import 'package:edtech/features/courses/presentation/screens/manage_module_screen.dart';
+import 'package:edtech/features/manage_module/presentation/screens/manage_module_screen.dart';
 import 'package:edtech/features/hub/presentation/screens/password_and_security_screen.dart';
 import 'package:edtech/features/hub/presentation/screens/payments_and_revenue_screen.dart';
 import 'package:edtech/features/hub/presentation/screens/ads_create_screen.dart';

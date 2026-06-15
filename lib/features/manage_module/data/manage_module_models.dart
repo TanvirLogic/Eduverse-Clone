@@ -6,7 +6,12 @@ class Lesson {
   final String duration;
   final LessonType type;
 
-  Lesson({required this.id, required this.title, required this.duration, required this.type});
+  Lesson({
+    required this.id,
+    required this.title,
+    required this.duration,
+    required this.type,
+  });
 }
 
 class CourseModule {

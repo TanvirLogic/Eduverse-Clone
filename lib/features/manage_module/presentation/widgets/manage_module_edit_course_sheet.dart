@@ -1,0 +1,410 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:edtech/app/app_colors.dart';
+import 'package:edtech/global/core/constants/sizes.dart';
+import 'package:edtech/global/core/widgets/auth_button.dart';
+import 'package:edtech/features/courses/presentation/widgets/upload_zone.dart';
+import 'package:edtech/features/courses/providers/course_upload_provider.dart';
+
+class ManageModuleEditCourseSheet extends StatefulWidget {
+  final VoidCallback onSave;
+
+  const ManageModuleEditCourseSheet({super.key, required this.onSave});
+
+  static Future<void> show(
+    BuildContext context, {
+    required VoidCallback onSave,
+  }) {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => ManageModuleEditCourseSheet(onSave: onSave),
+    );
+  }
+
+  @override
+  State<ManageModuleEditCourseSheet> createState() =>
+      _ManageModuleEditCourseSheetState();
+}
+
+class _ManageModuleEditCourseSheetState
+    extends State<ManageModuleEditCourseSheet> {
+  final _titleCtrl = TextEditingController();
+  final _shortDescCtrl = TextEditingController();
+  final _descCtrl = TextEditingController();
+  final _reqCtrl = TextEditingController();
+  final _priceCtrl = TextEditingController();
+  String _language = 'English';
+  String _level = 'BEGINNER';
+  String _type = 'FREE';
+
+  @override
+  void dispose() {
+    _titleCtrl.dispose();
+    _shortDescCtrl.dispose();
+    _descCtrl.dispose();
+    _reqCtrl.dispose();
+    _priceCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        left: 16,
+        right: 16,
+        top: 16,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Center(
+            child: Container(
+              width: 32,
+              height: 4,
+              decoration: BoxDecoration(
+                color: cs.onSurface.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text('Edit Course',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurface)),
+          const SizedBox(height: 20),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildLabel('Title', cs),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _titleCtrl,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) =>
+                        FocusManager.instance.primaryFocus?.unfocus(),
+                    style: TextStyle(color: cs.onSurface),
+                    decoration: _inputDeco(cs, 'Enter your course title'),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildLabel('Short Description', cs),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _shortDescCtrl,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) =>
+                        FocusManager.instance.primaryFocus?.unfocus(),
+                    style: TextStyle(color: cs.onSurface),
+                    decoration: _inputDeco(cs, 'Enter short description'),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildLabel('Description', cs),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _descCtrl,
+                    maxLines: 4,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) =>
+                        FocusManager.instance.primaryFocus?.unfocus(),
+                    style: TextStyle(color: cs.onSurface),
+                    decoration: _inputDeco(cs, 'Enter your description'),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildLabel('Requirements', cs),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _reqCtrl,
+                    maxLines: 4,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) =>
+                        FocusManager.instance.primaryFocus?.unfocus(),
+                    style: TextStyle(color: cs.onSurface),
+                    decoration: _inputDeco(cs, 'Enter your requirements'),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildLabel('Language', cs),
+                  const SizedBox(height: 8),
+                  _dropdown(cs, _language,
+                      ['English', 'Bangla', 'Spanish', 'Arabic', 'Hindi'],
+                      (val) {
+                    if (val != null) setState(() => _language = val);
+                  }),
+                  const SizedBox(height: 16),
+                  _buildLabel('Thumbnail', cs),
+                  const SizedBox(height: 8),
+                  Consumer<CourseUploadProvider>(
+                    builder: (context, provider, _) {
+                      final name = provider.thumbnailFile?.name;
+                      return InkWell(
+                        onTap: () => provider.pickThumbnail(),
+                        borderRadius:
+                            BorderRadius.circular(AppSizes.radiusDef),
+                        child: Ink(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? cs.surfaceContainerHighest
+                                : Colors.white,
+                            border: Border.all(
+                              color:
+                                  isDark ? cs.outlineVariant : AppColors.border,
+                              width: 1,
+                            ),
+                            borderRadius:
+                                BorderRadius.circular(AppSizes.radiusDef),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  name ?? 'Upload thumbnail',
+                                  style: TextStyle(
+                                    color: name != null
+                                        ? cs.onSurface
+                                        : cs.onSurface.withValues(alpha: 0.5),
+                                    fontSize: 14,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (name != null)
+                                GestureDetector(
+                                  onTap: () => provider.clearThumbnail(),
+                                  child: Icon(Icons.close,
+                                      size: 18, color: cs.error),
+                                ),
+                              const SizedBox(width: 8),
+                              Text(
+                                name != null ? 'Change' : 'Choose',
+                                style: TextStyle(
+                                    color: AppColors.themeColor,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildLabel('Intro Video', cs, required: false),
+                  const SizedBox(height: 8),
+                  Consumer<CourseUploadProvider>(
+                    builder: (context, provider, _) {
+                      return UploadZone(
+                        cs: cs,
+                        isDark: isDark,
+                        onTap: () => provider.pickVideo(),
+                        selectedFileName: provider.videoFile?.name,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildLabel('Level', cs),
+                  const SizedBox(height: 8),
+                  _dropdown(cs, _level,
+                      ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'], (val) {
+                    if (val != null) setState(() => _level = val);
+                  }),
+                  const SizedBox(height: 16),
+                  _buildLabel('Type', cs),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                          child: _radioTile(
+                              cs, 'FREE', _type, isDark, (v) {
+                        setState(() => _type = v);
+                      })),
+                      const SizedBox(width: 16),
+                      Expanded(
+                          child: _radioTile(
+                              cs, 'PAID', _type, isDark, (v) {
+                        setState(() => _type = v);
+                      })),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  if (_type == 'PAID') ...[
+                    _buildLabel('Price', cs),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _priceCtrl,
+                      keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) =>
+                          FocusManager.instance.primaryFocus?.unfocus(),
+                      style: TextStyle(color: cs.onSurface),
+                      decoration: _inputDeco(cs, 'Enter price'),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          AuthButton(
+            text: 'Save Changes',
+            borderRadius: 24,
+            onPressed: () {
+              widget.onSave();
+              Navigator.of(context).pop();
+            },
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLabel(String text, ColorScheme cs, {bool required = true}) {
+    return RichText(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+            fontWeight: FontWeight.w600, fontSize: 15, color: cs.onSurface),
+        children: [
+          if (required)
+            const TextSpan(
+                text: ' *',
+                style:
+                    TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _inputDeco(ColorScheme cs, String hint) {
+    final isDark = cs.brightness == Brightness.dark;
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(
+          color: cs.onSurface.withValues(alpha: 0.5), fontSize: 14),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+        borderSide: BorderSide(
+            color: isDark ? cs.outlineVariant : AppColors.border, width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+        borderSide: BorderSide(color: AppColors.themeColor, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+        borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+        borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+      ),
+    );
+  }
+
+  Widget _dropdown(ColorScheme cs, String value, List<String> items,
+      ValueChanged<String?> onChanged) {
+    final isDark = cs.brightness == Brightness.dark;
+    return DropdownButtonFormField<String>(
+      initialValue: value,
+      items: items
+          .map((item) => DropdownMenuItem<String>(
+              value: item,
+              child: Text(item, style: TextStyle(color: cs.onSurface))))
+          .toList(),
+      onChanged: onChanged,
+      icon: Icon(Icons.keyboard_arrow_down_rounded,
+          color: cs.onSurface.withValues(alpha: 0.5)),
+      style: TextStyle(
+          color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.w500),
+      decoration: InputDecoration(
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+          borderSide: BorderSide(
+              color: isDark ? cs.outlineVariant : AppColors.border, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+          borderSide: BorderSide(color: AppColors.themeColor, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+        ),
+        filled: true,
+        fillColor: isDark ? cs.surfaceContainerHighest : Colors.white,
+      ),
+      dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+    );
+  }
+
+  Widget _radioTile(ColorScheme cs, String tileType, String currentType,
+      bool isDark, ValueChanged<String> onChanged) {
+    final isSelected = currentType == tileType;
+    return InkWell(
+      onTap: () => onChanged(tileType),
+      borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+      child: Ink(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: isDark ? cs.surfaceContainerHighest : Colors.white,
+          borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+          border: Border.all(
+            color: isDark ? cs.outlineVariant : AppColors.border,
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isSelected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_off,
+              color: isSelected
+                  ? AppColors.themeColor
+                  : cs.onSurface.withValues(alpha: 0.5),
+              size: 22,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              tileType,
+              style: TextStyle(
+                color: isSelected
+                    ? cs.onSurface
+                    : cs.onSurface.withValues(alpha: 0.5),
+                fontWeight:
+                    isSelected ? FontWeight.w600 : FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

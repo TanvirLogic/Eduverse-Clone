@@ -43,8 +43,10 @@ class Urls {
   static const String createCourseUrl = '$_baseUrl/course';
   static const String courseListUrl = '$_baseUrl/courses';
   static const String courseDetailUrl = '$_baseUrl/courses'; // append /{id}
-  static const String enrolledCourseUrl = '$_baseUrl/courses'; // append /{id}/enrolled
-  static const String manageModulesUrl = '$_baseUrl/courses'; // append /{id}/modules
+  static const String enrolledCourseUrl =
+      '$_baseUrl/courses'; // append /{id}/enrolled
+  static const String manageModulesUrl =
+      '$_baseUrl/courses'; // append /{id}/modules
   static const String courseModuleUrl = '$_baseUrl/course/module';
   static const String courseLessonUrl = '$_baseUrl/course/lesson';
 
@@ -71,7 +73,7 @@ class Urls {
   // ──────────────────────────────────────────────
   // Social Endpoints
   // ──────────────────────────────────────────────
-  static const String socialFeedUrl = '$_baseUrl/social/feed';
+  static const String socialFeedUrl = '$_baseUrl/course/feed';
 
   // ──────────────────────────────────────────────
   // Notification Endpoints

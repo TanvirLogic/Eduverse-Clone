@@ -127,18 +127,24 @@ class SignInProvider extends ChangeNotifier {
           await prefs.setString('last_used_email', user.email);
           ToastService.showSuccess("Welcome back ${user.firstName}!");
         }
-        // statusCode == 202 means new user — screen will handle role selection
 
         _isGoogleLoading = false;
         notifyListeners();
         return statusCode;
-      } else {
-        _errorMessage = response.errorMessage;
-        ToastService.showError(response.errorMessage ?? 'Google Sign-In failed');
+      }
+
+      // HTTP 202 → new user who needs role selection
+      if (response.responseCode == 202) {
         _isGoogleLoading = false;
         notifyListeners();
-        return null;
+        return 202;
       }
+
+      _errorMessage = response.errorMessage;
+      ToastService.showError(response.errorMessage ?? 'Google Sign-In failed');
+      _isGoogleLoading = false;
+      notifyListeners();
+      return null;
     } catch (e) {
       _errorMessage = e.toString();
       ToastService.showError('An error occurred during Google sign in');
