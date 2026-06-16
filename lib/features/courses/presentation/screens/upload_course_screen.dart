@@ -75,8 +75,13 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
     );
 
     if (success && mounted) {
-      Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
-      Navigator.of(context).pushNamed(AppRoutes.manageModule, arguments: {'courseId': provider.createdCourseId});
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+      Navigator.of(context).pushNamed(
+        AppRoutes.manageModule,
+        arguments: {'courseId': provider.createdCourseId},
+      );
     }
   }
 
@@ -106,8 +111,11 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
             Expanded(
               child: GestureDetector(
                 onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSizes.horizontalPadding, vertical: 16),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.horizontalPadding,
+                    vertical: 16,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -116,9 +124,13 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
                       TextFormField(
                         controller: _titleCtrl,
                         textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+                        onFieldSubmitted: (_) =>
+                            FocusManager.instance.primaryFocus?.unfocus(),
                         style: TextStyle(color: cs.onSurface),
-                        decoration: _inputDecoration(cs, 'Enter your course title'),
+                        decoration: _inputDecoration(
+                          cs,
+                          'Enter your course title',
+                        ),
                       ),
                       const SizedBox(height: 16),
                       _buildLabel('Short Description', cs),
@@ -126,9 +138,13 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
                       TextFormField(
                         controller: _shortDescCtrl,
                         textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+                        onFieldSubmitted: (_) =>
+                            FocusManager.instance.primaryFocus?.unfocus(),
                         style: TextStyle(color: cs.onSurface),
-                        decoration: _inputDecoration(cs, 'Enter short description'),
+                        decoration: _inputDecoration(
+                          cs,
+                          'Enter short description',
+                        ),
                       ),
                       const SizedBox(height: 16),
                       _buildLabel('Description', cs),
@@ -137,9 +153,13 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
                         controller: _descCtrl,
                         maxLines: 4,
                         textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+                        onFieldSubmitted: (_) =>
+                            FocusManager.instance.primaryFocus?.unfocus(),
                         style: TextStyle(color: cs.onSurface),
-                        decoration: _inputDecoration(cs, 'Enter your description'),
+                        decoration: _inputDecoration(
+                          cs,
+                          'Enter your description',
+                        ),
                       ),
                       const SizedBox(height: 16),
                       _buildLabel('Requirements', cs),
@@ -148,9 +168,13 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
                         controller: _reqCtrl,
                         maxLines: 4,
                         textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+                        onFieldSubmitted: (_) =>
+                            FocusManager.instance.primaryFocus?.unfocus(),
                         style: TextStyle(color: cs.onSurface),
-                        decoration: _inputDecoration(cs, 'Enter your requirements'),
+                        decoration: _inputDecoration(
+                          cs,
+                          'Enter your requirements',
+                        ),
                       ),
                       const SizedBox(height: 16),
                       _buildLabel('Language', cs),
@@ -169,25 +193,41 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
                           final name = provider.thumbnailFile?.name;
                           return InkWell(
                             onTap: () => provider.pickThumbnail(),
-                            borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+                            borderRadius: BorderRadius.circular(
+                              AppSizes.radiusDef,
+                            ),
                             child: Ink(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
                               decoration: BoxDecoration(
-                                color: isDark ? cs.surfaceContainerHighest : Colors.white,
+                                color: isDark
+                                    ? cs.surfaceContainerHighest
+                                    : Colors.white,
                                 border: Border.all(
-                                  color: isDark ? cs.outlineVariant : AppColors.border,
+                                  color: isDark
+                                      ? cs.outlineVariant
+                                      : AppColors.border,
                                   width: 1,
                                 ),
-                                borderRadius: BorderRadius.circular(AppSizes.radiusDef),
+                                borderRadius: BorderRadius.circular(
+                                  AppSizes.radiusDef,
+                                ),
                               ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
                                     child: Text(
                                       name ?? 'Upload thumbnail',
                                       style: TextStyle(
-                                        color: name != null ? cs.onSurface : cs.onSurface.withValues(alpha: 0.5),
+                                        color: name != null
+                                            ? cs.onSurface
+                                            : cs.onSurface.withValues(
+                                                alpha: 0.5,
+                                              ),
                                         fontSize: 14,
                                       ),
                                       overflow: TextOverflow.ellipsis,
@@ -196,12 +236,20 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
                                   if (name != null)
                                     GestureDetector(
                                       onTap: () => provider.clearThumbnail(),
-                                      child: Icon(Icons.close, size: 18, color: cs.error),
+                                      child: Icon(
+                                        Icons.close,
+                                        size: 18,
+                                        color: cs.error,
+                                      ),
                                     ),
                                   const SizedBox(width: 8),
                                   Text(
                                     name != null ? 'Change' : 'Choose',
-                                    style: TextStyle(color: AppColors.themeColor, fontWeight: FontWeight.w700, fontSize: 14),
+                                    style: TextStyle(
+                                      color: AppColors.themeColor,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -228,7 +276,7 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
                       _buildDropdownField(
                         cs,
                         _selectedLevel,
-                        ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'],
+                        ['Beginner', 'Intermediate', 'Advanced'],
                         (val) => setState(() => _selectedLevel = val!),
                       ),
                       const SizedBox(height: 16),
@@ -249,7 +297,8 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
                           controller: _priceCtrl,
                           keyboardType: TextInputType.number,
                           textInputAction: TextInputAction.done,
-                          onFieldSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+                          onFieldSubmitted: (_) =>
+                              FocusManager.instance.primaryFocus?.unfocus(),
                           style: TextStyle(color: cs.onSurface),
                           decoration: _inputDecoration(cs, 'Enter price'),
                         ),
@@ -273,7 +322,6 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
                         borderRadius: 28,
                         onPressed: provider.isLoading ? null : _handleSubmit,
                       ),
-
                     ],
                   );
                 },
@@ -289,10 +337,17 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
     return RichText(
       text: TextSpan(
         text: text,
-        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: cs.onSurface),
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 15,
+          color: cs.onSurface,
+        ),
         children: [
           if (required)
-            const TextSpan(text: ' *', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            const TextSpan(
+              text: ' *',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
         ],
       ),
     );
@@ -302,11 +357,17 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
     final isDark = cs.brightness == Brightness.dark;
     return InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(color: cs.onSurface.withValues(alpha: 0.5), fontSize: 14),
+      hintStyle: TextStyle(
+        color: cs.onSurface.withValues(alpha: 0.5),
+        fontSize: 14,
+      ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppSizes.radiusDef),
-        borderSide: BorderSide(color: isDark ? cs.outlineVariant : AppColors.border, width: 1),
+        borderSide: BorderSide(
+          color: isDark ? cs.outlineVariant : AppColors.border,
+          width: 1,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppSizes.radiusDef),
@@ -333,16 +394,32 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
     return DropdownButtonFormField<String>(
       value: value,
       items: items.map((item) {
-        return DropdownMenuItem<String>(value: item, child: Text(item, style: TextStyle(color: cs.onSurface)));
+        return DropdownMenuItem<String>(
+          value: item,
+          child: Text(item, style: TextStyle(color: cs.onSurface)),
+        );
       }).toList(),
       onChanged: onChanged,
-      icon: Icon(Icons.keyboard_arrow_down_rounded, color: cs.onSurface.withValues(alpha: 0.5)),
-      style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.w500),
+      icon: Icon(
+        Icons.keyboard_arrow_down_rounded,
+        color: cs.onSurface.withValues(alpha: 0.5),
+      ),
+      style: TextStyle(
+        color: cs.onSurface,
+        fontSize: 15,
+        fontWeight: FontWeight.w500,
+      ),
       decoration: InputDecoration(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSizes.radiusDef),
-          borderSide: BorderSide(color: isDark ? cs.outlineVariant : AppColors.border, width: 1),
+          borderSide: BorderSide(
+            color: isDark ? cs.outlineVariant : AppColors.border,
+            width: 1,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSizes.radiusDef),
@@ -383,14 +460,18 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
           children: [
             Icon(
               isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-              color: isSelected ? AppColors.themeColor : cs.onSurface.withValues(alpha: 0.5),
+              color: isSelected
+                  ? AppColors.themeColor
+                  : cs.onSurface.withValues(alpha: 0.5),
               size: 22,
             ),
             const SizedBox(width: 12),
             Text(
               type,
               style: TextStyle(
-                color: isSelected ? cs.onSurface : cs.onSurface.withValues(alpha: 0.5),
+                color: isSelected
+                    ? cs.onSurface
+                    : cs.onSurface.withValues(alpha: 0.5),
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
               ),
             ),

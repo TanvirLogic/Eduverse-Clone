@@ -13,13 +13,14 @@ import 'package:edtech/features/manage_module/presentation/widgets/manage_module
 import 'package:edtech/features/manage_module/presentation/widgets/manage_module_edit_module_sheet.dart';
 
 class ManageModuleScreen extends StatelessWidget {
-  const ManageModuleScreen({super.key});
+  final int courseId;
+  const ManageModuleScreen({super.key, this.courseId = 0});
   static const String name = '/manage-module';
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => ManageModuleProvider(),
+      create: (_) => ManageModuleProvider(courseId: courseId),
       child: const _ManageModuleBody(),
     );
   }

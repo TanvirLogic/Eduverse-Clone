@@ -5,7 +5,8 @@ import 'package:edtech/app/setup_network_caller.dart';
 import 'package:edtech/global/core/services/toast_service.dart';
 
 class ManageModuleProvider extends ChangeNotifier {
-  int _nextModuleId = 1;
+  final int courseId;
+  int _nextModuleId = 3;
   int _nextLessonId = 1;
 
   final List<CourseModule> _modules = [
@@ -23,6 +24,8 @@ class ManageModuleProvider extends ChangeNotifier {
     ),
   ];
   bool _hasUnsavedChanges = false;
+
+  ManageModuleProvider({this.courseId = 0});
 
   List<CourseModule> get modules => _modules;
   bool get hasUnsavedChanges => _hasUnsavedChanges;
@@ -117,15 +120,18 @@ class ManageModuleProvider extends ChangeNotifier {
   Future<bool> addModule(String title) async {
     final response = await getNetworkCaller().postRequest(
       url: Urls.courseModuleUrl,
-      body: {'title': title, 'order': _modules.length, 'courseID': 1},
+      body: {'title': title, 'order': _modules.length, 'courseID': courseId},
     );
     if (response.isSuccess) {
+      final data = response.responseData['data'];
+      final moduleId = data['id'] as int? ?? _nextModuleId++;
+      final serverCourseId = data['courseId'] as int? ?? courseId;
       _modules.add(
         CourseModule(
-          id: _nextModuleId++,
+          id: moduleId,
           title: title,
           order: _modules.length,
-          courseId: 1,
+          courseId: serverCourseId,
           lessons: [],
           isExpanded: true,
         ),

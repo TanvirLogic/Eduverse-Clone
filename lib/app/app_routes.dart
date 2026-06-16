@@ -110,7 +110,11 @@ class AppRoutes {
       case notifications:
         return MaterialPageRoute(builder: (_) => const NotificationsPage());
       case manageModule:
-        return MaterialPageRoute(builder: (_) => const ManageModuleScreen());
+        final args = settings.arguments as Map?;
+        final courseId = (args?['courseId'] as int?) ?? 0;
+        return MaterialPageRoute(
+          builder: (_) => ManageModuleScreen(courseId: courseId),
+        );
       case adsManager:
         return MaterialPageRoute(builder: (_) => const AdsManagerScreen());
       case adsCreate:

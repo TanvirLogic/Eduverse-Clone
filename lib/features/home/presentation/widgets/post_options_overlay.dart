@@ -49,7 +49,9 @@ class PostOptionsOverlay extends StatelessWidget {
                 children: [
                   GestureDetector(
                     onTap: () {
-                      Navigator.pushNamed(context, AppRoutes.uploadCoursePage);
+                      Navigator.of(context)
+                        ..pop()
+                        ..pushNamed(AppRoutes.uploadCoursePage);
                     },
                     child: Image.asset(Images.uploadCourse),
                   ),
@@ -74,7 +76,9 @@ class PostOptionsOverlay extends StatelessWidget {
                   const SizedBox(height: 12),
                   GestureDetector(
                     onTap: () {
-                      Navigator.pushNamed(context, AppRoutes.uploadVideoPage);
+                      Navigator.of(context)
+                        ..pop()
+                        ..pushNamed(AppRoutes.uploadVideoPage);
                     },
                     child: Image.asset(Images.postVideo),
                   ),

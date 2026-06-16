@@ -134,7 +134,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                       const SizedBox(height: 16),
                       ...provider.courses.map(
                         (course) => Padding(
-                          padding: const EdgeInsets.only(bottom: 20),
+                          padding: const EdgeInsets.only(bottom: 12),
                           child: _RecommendedCard(
                             course: course,
                             cs: cs,
@@ -458,9 +458,7 @@ class _RecommendedCard extends StatelessWidget {
                               BorderRadius.circular(AppSizes.radiusLg2),
                         ),
                         child: Text(
-                          course.status.isNotEmpty
-                              ? course.status
-                              : course.level,
+                          'by ${course.mentor.name}',
                           style:
                               TextStyle(fontSize: 12, color: AppColors.primaryText),
                         ),
@@ -483,7 +481,7 @@ class _RecommendedCard extends StatelessWidget {
                                 color: Color(0xFFF59E0B), size: 14),
                             const SizedBox(width: 4),
                             Text(
-                              _formatDate(course.createdAt),
+                              _formatDate(course.updatedAt),
                               style: TextStyle(
                                   fontSize: 12, color: AppColors.primaryText),
                             ),
@@ -517,13 +515,15 @@ class _RecommendedCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            Row(
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
               children: [
-                _iconChip(Icons.school, course.level, cs, isDark),
-                const SizedBox(width: 12),
-                _iconChip(Icons.monetization_on_outlined,
-                    course.type == 'PAID' ? '\$${course.price}' : 'Free',
-                    cs, isDark),
+                if (course.language.isNotEmpty)
+                  _svgChip(Images.language, course.language),
+                _svgChip(Images.bookNoC, course.level),
+                _svgChip(Images.dollar,
+                    course.type == 'PAID' ? 'Paid' : 'Free'),
               ],
             ),
             const SizedBox(height: 16),
@@ -531,7 +531,7 @@ class _RecommendedCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  course.type == 'PAID' ? '\$${course.price}' : 'Free',
+                  course.type == 'PAID' ? '\u09F3${course.price}' : 'Free',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w500,
@@ -555,12 +555,14 @@ class _RecommendedCard extends StatelessWidget {
     );
   }
 
-  Widget _iconChip(IconData icon, String label, ColorScheme cs, bool isDark) {
+  Widget _svgChip(String asset, String label) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16,
-            color: isDark ? Colors.white : AppColors.themeColor),
+        SvgPicture.asset(asset, width: 16, height: 16,
+            colorFilter: ColorFilter.mode(
+                isDark ? Colors.white : AppColors.themeColor,
+                BlendMode.srcIn)),
         const SizedBox(width: 4),
         Text(
           label,
