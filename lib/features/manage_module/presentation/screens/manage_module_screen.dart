@@ -12,6 +12,7 @@ import 'package:edtech/features/manage_module/presentation/widgets/manage_module
 import 'package:edtech/features/manage_module/presentation/widgets/manage_module_add_module_sheet.dart';
 import 'package:edtech/features/manage_module/presentation/widgets/manage_module_edit_module_sheet.dart';
 import 'package:edtech/features/manage_module/presentation/widgets/manage_module_edit_lesson_sheet.dart';
+import 'package:edtech/global/core/widgets/app_alert_dialog.dart';
 
 class ManageModuleScreen extends StatelessWidget {
   final int courseId;
@@ -43,42 +44,16 @@ class _ManageModuleBodyState extends State<_ManageModuleBody> {
   }
 
   void _showRenameDialog(String currentName, ValueChanged<String> onSaved) {
-    final controller = TextEditingController(text: currentName);
-    showDialog(
+    AppAlertDialog.showInput(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Rename'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) {
-            final newName = controller.text.trim();
-            if (newName.isNotEmpty) {
-              onSaved(newName);
-              Navigator.pop(context);
-            }
-          },
-          decoration: const InputDecoration(hintText: 'Enter new name'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              final newName = controller.text.trim();
-              if (newName.isNotEmpty) {
-                onSaved(newName);
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
+      title: 'Rename',
+      initialValue: currentName,
+      hintText: 'Enter new name',
+    ).then((value) {
+      if (value != null && value.isNotEmpty) {
+        onSaved(value);
+      }
+    });
   }
 
   @override
@@ -155,48 +130,12 @@ class _ManageModuleBodyState extends State<_ManageModuleBody> {
                         resetNotifier: _resetNotifier,
                         onReorder: provider.reorderModule,
                         onDeleteModule: (module, index) async {
-                          final confirmed = await showDialog<bool>(
+                          final confirmed = await AppAlertDialog.show(
                             context: context,
-                            builder: (ctx) => AlertDialog(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              title: Text(
-                                'Delete Module',
-                                style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                  color: cs.onSurface,
-                                ),
-                              ),
-                              content: Text(
-                                'Delete "${module.title}"?',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: cs.onSurface,
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.of(ctx).pop(false),
-                                  child: Text(
-                                    'Cancel',
-                                    style: TextStyle(
-                                      color: cs.onSurface.withValues(
-                                        alpha: 0.6,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.of(ctx).pop(true),
-                                  child: Text(
-                                    'Delete',
-                                    style: TextStyle(color: cs.error),
-                                  ),
-                                ),
-                              ],
-                            ),
+                            title: 'Delete Module',
+                            content: 'Delete "${module.title}"?',
+                            confirmText: 'Delete',
+                            cancelText: 'Cancel',
                           );
                           if (confirmed == true) {
                             return provider.deleteModule(module);
@@ -269,12 +208,11 @@ class _ManageModuleBodyState extends State<_ManageModuleBody> {
                 left: 0,
                 right: 0,
                 child: ManageModuleBottomBar(
-                  hasUnsavedChanges: provider.hasUnsavedChanges,
                   onAddModule: () => ManageModuleAddModuleSheet.show(
                     context,
                     onAddModule: provider.addModule,
                   ),
-                  onSaveOrder: () {
+                  onPublish: () {
                     _resetNotifier.value++;
                     provider.saveOrder();
                   },

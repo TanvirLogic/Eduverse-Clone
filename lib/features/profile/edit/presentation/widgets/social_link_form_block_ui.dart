@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:edtech/global/core/widgets/swipe_action_widget.dart';
+import 'package:edtech/global/core/widgets/app_alert_dialog.dart';
 
 class SocialLinksFormBlockUi extends StatelessWidget {
   final ValueNotifier<int> resetNotifier;
@@ -132,32 +133,12 @@ class _SocialLinkFormRowState extends State<_SocialLinkFormRow> {
   }
 
   Future<bool> _confirmDelete() async {
-    final cs = Theme.of(context).colorScheme;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await AppAlertDialog.show(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Text(
-          "Delete Social Link",
-          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: cs.onSurface),
-        ),
-        content: Text(
-          "Are you sure you want to delete this social link?",
-          style: TextStyle(fontSize: 14, color: cs.onSurface),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text("Cancel", style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6))),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text("Delete", style: TextStyle(color: cs.error)),
-          ),
-        ],
-      ),
+      title: 'Delete Social Link',
+      content: 'Are you sure you want to delete this social link?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
     );
     return confirmed ?? false;
   }

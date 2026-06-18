@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:edtech/app/app_colors.dart';
 import 'package:edtech/global/core/constants/sizes.dart';
 import 'package:edtech/global/core/widgets/auth_button.dart';
+import 'package:edtech/global/core/widgets/app_alert_dialog.dart';
 import 'package:edtech/features/courses/presentation/widgets/upload_zone.dart';
 import 'package:edtech/features/courses/providers/course_upload_provider.dart';
 
@@ -211,24 +212,13 @@ class _ManageModuleEditCourseSheetState
                       final name = provider.thumbnailFile?.name;
                       return InkWell(
                         onTap: () async {
-                          final confirmed = await showDialog<bool>(
+                          final confirmed = await AppAlertDialog.show(
                             context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: const Text('Replace Thumbnail'),
-                              content: const Text(
-                                'Existing thumbnail will be deleted. Continue?',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  child: const Text('Cancel'),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  child: const Text('Okay'),
-                                ),
-                              ],
-                            ),
+                            title: 'Replace Thumbnail',
+                            content: 'Existing thumbnail will be deleted. Continue?',
+                            confirmText: 'Okay',
+                            cancelText: 'Cancel',
+                            confirmColor: AppColors.themeColor,
                           );
                           if (confirmed == true) {
                             provider.pickThumbnail();
@@ -295,24 +285,13 @@ class _ManageModuleEditCourseSheetState
                         cs: cs,
                         isDark: isDark,
                         onTap: () async {
-                          final confirmed = await showDialog<bool>(
+                          final confirmed = await AppAlertDialog.show(
                             context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: const Text('Replace Video'),
-                              content: const Text(
-                                'Existing intro video will be deleted. Continue?',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  child: const Text('Cancel'),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  child: const Text('Okay'),
-                                ),
-                              ],
-                            ),
+                            title: 'Replace Video',
+                            content: 'Existing intro video will be deleted. Continue?',
+                            confirmText: 'Okay',
+                            cancelText: 'Cancel',
+                            confirmColor: AppColors.themeColor,
                           );
                           if (confirmed == true) {
                             provider.pickVideo();

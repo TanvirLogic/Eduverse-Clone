@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:edtech/global/core/constants/images/images.dart';
 import 'package:edtech/app/app_colors.dart';
 import 'package:edtech/global/core/widgets/swipe_action_widget.dart';
+import 'package:edtech/global/core/widgets/app_alert_dialog.dart';
 import 'package:edtech/features/manage_module/data/manage_module_models.dart';
 
 class ModuleCard extends StatelessWidget {
@@ -248,23 +249,12 @@ class _LessonSwipeRowState extends State<_LessonSwipeRow> {
       ),
       resetNotifier: widget.resetNotifier,
       onDelete: () async {
-        final confirmed = await showDialog<bool>(
+        final confirmed = await AppAlertDialog.show(
           context: context,
-          builder: (ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Text('Delete Lesson', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: cs.onSurface)),
-            content: Text('Delete "${lesson.title}"?', style: TextStyle(fontSize: 14, color: cs.onSurface)),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: Text('Cancel', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6))),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(true),
-                child: Text('Delete', style: TextStyle(color: cs.error)),
-              ),
-            ],
-          ),
+          title: 'Delete Lesson',
+          content: 'Delete "${lesson.title}"?',
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
         );
         if (confirmed == true) {
           return await widget.onDeleteLesson(lessonIndex);

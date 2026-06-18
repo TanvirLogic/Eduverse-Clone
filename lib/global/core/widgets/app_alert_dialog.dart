@@ -1,9 +1,11 @@
 import 'package:edtech/global/core/constants/sizes.dart';
+import 'package:edtech/app/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class AppAlertDialog extends StatelessWidget {
   final String title;
-  final String content;
+  final String? content;
+  final Widget? contentWidget;
   final String? confirmText;
   final String? cancelText;
   final Color? confirmColor;
@@ -13,7 +15,8 @@ class AppAlertDialog extends StatelessWidget {
   const AppAlertDialog({
     super.key,
     required this.title,
-    required this.content,
+    this.content,
+    this.contentWidget,
     this.confirmText,
     this.cancelText,
     this.confirmColor,
@@ -24,7 +27,8 @@ class AppAlertDialog extends StatelessWidget {
   static Future<bool?> show({
     required BuildContext context,
     required String title,
-    required String content,
+    String content = '',
+    Widget? contentWidget,
     String? confirmText,
     String? cancelText,
     Color? confirmColor,
@@ -34,11 +38,59 @@ class AppAlertDialog extends StatelessWidget {
       builder: (ctx) => AppAlertDialog(
         title: title,
         content: content,
+        contentWidget: contentWidget,
         confirmText: confirmText,
         cancelText: cancelText,
         confirmColor: confirmColor,
         onConfirm: () => Navigator.pop(ctx, true),
         onCancel: () => Navigator.pop(ctx, false),
+      ),
+    );
+  }
+
+  static Future<String?> showInput({
+    required BuildContext context,
+    required String title,
+    String? initialValue,
+    String hintText = '',
+    String? confirmText,
+    String? cancelText,
+    Color? confirmColor,
+  }) {
+    final controller = TextEditingController(text: initialValue);
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => AppAlertDialog(
+        title: title,
+        contentWidget: TextField(
+          controller: controller,
+          autofocus: true,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (value) {
+            final trimmed = value.trim();
+            if (trimmed.isNotEmpty) {
+              Navigator.pop(ctx, trimmed);
+            }
+          },
+          decoration: InputDecoration(
+            hintText: hintText,
+            border: InputBorder.none,
+          ),
+          style: TextStyle(
+            fontSize: 14,
+            color: Theme.of(ctx).colorScheme.onSurface,
+          ),
+        ),
+        confirmText: confirmText ?? 'Save',
+        cancelText: cancelText ?? 'Cancel',
+        confirmColor: confirmColor ?? AppColors.themeColor,
+        onConfirm: () {
+          final trimmed = controller.text.trim();
+          if (trimmed.isNotEmpty) {
+            Navigator.pop(ctx, trimmed);
+          }
+        },
+        onCancel: () => Navigator.pop(ctx),
       ),
     );
   }
@@ -58,13 +110,16 @@ class AppAlertDialog extends StatelessWidget {
           color: cs.onSurface,
         ),
       ),
-      content: Text(
-        content,
-        style: TextStyle(
-          fontSize: 14,
-          color: cs.onSurface,
-        ),
-      ),
+      content: contentWidget ??
+          (content != null
+              ? Text(
+                  content!,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: cs.onSurface,
+                  ),
+                )
+              : null),
       actions: [
         if (cancelText != null)
           TextButton(
@@ -79,7 +134,7 @@ class AppAlertDialog extends StatelessWidget {
             onPressed: onConfirm,
             child: Text(
               confirmText!,
-              style: TextStyle(color: confirmColor ?? cs.error),
+              style: TextStyle(color: confirmColor ?? AppColors.themeColor),
             ),
           ),
       ],
