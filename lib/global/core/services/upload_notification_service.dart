@@ -6,7 +6,8 @@ class UploadNotificationService {
   static const String _channelId = 'upload_progress';
   static const String _channelName = 'Upload Progress';
   static const String _channelDesc = 'Shows file upload progress';
-  static final int _notificationId = 0;
+
+  static bool _initialized = false;
 
   static Future<void> init() async {
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -17,12 +18,16 @@ class UploadNotificationService {
       _channelId,
       _channelName,
       description: _channelDesc,
-      importance: Importance.low,
+      importance: Importance.defaultImportance,
     );
-    await _notifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.createNotificationChannel(androidChannel);
+    await _notifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(androidChannel);
+
+    _initialized = true;
   }
 
   static Future<bool> requestNotificationPermission() async {
+    if (!_initialized) await init();
     final plugin = _notifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     if (plugin == null) return false;
     final granted = await plugin.requestNotificationsPermission();
@@ -46,6 +51,7 @@ class UploadNotificationService {
   }
 
   static Future<void> showProgress({
+    required int notificationId,
     required int progress,
     required int total,
     required String title,
@@ -55,7 +61,7 @@ class UploadNotificationService {
     final body = fileName != null ? '$fileName — $pct%' : 'Uploading... $pct%';
 
     await _notifications.show(
-      _notificationId,
+      notificationId,
       title,
       body,
       NotificationDetails(
@@ -63,8 +69,8 @@ class UploadNotificationService {
           _channelId,
           _channelName,
           channelDescription: _channelDesc,
-          importance: Importance.low,
-          priority: Priority.low,
+          importance: Importance.defaultImportance,
+          priority: Priority.defaultPriority,
           showProgress: true,
           maxProgress: total,
           progress: progress,
@@ -78,9 +84,13 @@ class UploadNotificationService {
     );
   }
 
-  static Future<void> showSuccess({required String title, String? body}) async {
+  static Future<void> showSuccess({
+    required int notificationId,
+    required String title,
+    String? body,
+  }) async {
     await _notifications.show(
-      _notificationId,
+      notificationId,
       title,
       body ?? 'Upload completed successfully',
       NotificationDetails(
@@ -88,18 +98,26 @@ class UploadNotificationService {
           _channelId,
           _channelName,
           channelDescription: _channelDesc,
-          importance: Importance.defaultImportance,
-          priority: Priority.defaultPriority,
+          importance: Importance.high,
+          priority: Priority.high,
           showProgress: false,
         ),
         iOS: const DarwinNotificationDetails(),
       ),
     );
+
+    Future.delayed(const Duration(seconds: 2), () {
+      _notifications.cancel(notificationId);
+    });
   }
 
-  static Future<void> showError({required String title, String? body}) async {
+  static Future<void> showError({
+    required int notificationId,
+    required String title,
+    String? body,
+  }) async {
     await _notifications.show(
-      _notificationId,
+      notificationId,
       title,
       body ?? 'Upload failed',
       NotificationDetails(
@@ -116,7 +134,11 @@ class UploadNotificationService {
     );
   }
 
-  static Future<void> cancel() async {
-    await _notifications.cancel(_notificationId);
+  static Future<void> cancel({int? notificationId}) async {
+    if (notificationId != null) {
+      await _notifications.cancel(notificationId);
+    } else {
+      await _notifications.cancelAll();
+    }
   }
 }

@@ -33,6 +33,7 @@ class ManageModuleProvider extends ChangeNotifier {
   final List<CourseModule> _modules = [];
   final Map<int, String> _videoUrlCache = {};
   bool _hasUnsavedChanges = false;
+  int? _currentNotifId;
 
   String _courseTitle = '';
   String _courseShortDescription = '';
@@ -362,10 +363,12 @@ class ManageModuleProvider extends ChangeNotifier {
     XFile videoFile, {
     void Function(double)? onProgress,
   }) async {
+    _currentNotifId = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final module = _modules[moduleIndex];
     final videoName = videoFile.name;
     final videoContentType = _inferVideoContentType(videoName);
 
+    await UploadNotificationService.requestNotificationPermission();
     await UploadNotificationService.startService();
 
     final uploadUrlResponse = await getNetworkCaller().postRequest(
@@ -378,7 +381,10 @@ class ManageModuleProvider extends ChangeNotifier {
     );
     if (!uploadUrlResponse.isSuccess) {
       ToastService.showError(uploadUrlResponse.errorMessage ?? 'Failed to get upload URL');
-      await UploadNotificationService.showError(title: 'Upload Failed');
+      await UploadNotificationService.showError(
+          notificationId: _currentNotifId!,
+          title: 'Upload Failed',
+        );
       await UploadNotificationService.stopService();
       return false;
     }
@@ -388,7 +394,10 @@ class ManageModuleProvider extends ChangeNotifier {
     final data = wrapper is Map ? (wrapper['data'] ?? wrapper) : wrapper;
     if (data is! Map) {
       ToastService.showError('Invalid upload URL response');
-      await UploadNotificationService.showError(title: 'Upload Failed');
+      await UploadNotificationService.showError(
+          notificationId: _currentNotifId!,
+          title: 'Upload Failed',
+        );
       await UploadNotificationService.stopService();
       return false;
     }
@@ -396,7 +405,10 @@ class ManageModuleProvider extends ChangeNotifier {
     final fileUrl = data['fileUrl'] as String?;
     if (uploadUrl == null || fileUrl == null) {
       ToastService.showError('Invalid upload URL response');
-      await UploadNotificationService.showError(title: 'Upload Failed');
+      await UploadNotificationService.showError(
+          notificationId: _currentNotifId!,
+          title: 'Upload Failed',
+        );
       await UploadNotificationService.stopService();
       return false;
     }
@@ -424,7 +436,10 @@ class ManageModuleProvider extends ChangeNotifier {
     );
     if (!lessonResponse.isSuccess) {
       ToastService.showError(lessonResponse.errorMessage ?? 'Failed to create lesson');
-      await UploadNotificationService.showError(title: 'Upload Failed');
+      await UploadNotificationService.showError(
+          notificationId: _currentNotifId!,
+          title: 'Upload Failed',
+        );
       await UploadNotificationService.stopService();
       return false;
     }
@@ -446,7 +461,10 @@ class ManageModuleProvider extends ChangeNotifier {
     );
     notifyListeners();
     ToastService.showSuccess('Video lesson added successfully');
-    await UploadNotificationService.showSuccess(title: 'Upload Complete');
+    await UploadNotificationService.showSuccess(
+      notificationId: _currentNotifId!,
+      title: 'Upload Complete',
+    );
     await UploadNotificationService.stopService();
     return true;
   }
@@ -563,6 +581,7 @@ class ManageModuleProvider extends ChangeNotifier {
               notifyListeners();
             }
             UploadNotificationService.showProgress(
+              notificationId: _currentNotifId!,
               progress: sent,
               total: total,
               title: 'Uploading Video Lesson',
@@ -589,7 +608,10 @@ class ManageModuleProvider extends ChangeNotifier {
       if (response.statusCode != 200) {
         AppLogger.e('S3 upload failed: status=${response.statusCode}');
         ToastService.showError('Upload failed with status ${response.statusCode}');
-        await UploadNotificationService.showError(title: 'Upload Failed');
+        await UploadNotificationService.showError(
+          notificationId: _currentNotifId!,
+          title: 'Upload Failed',
+        );
         await UploadNotificationService.stopService();
         return false;
       }
@@ -597,13 +619,19 @@ class ManageModuleProvider extends ChangeNotifier {
     } on TimeoutException {
       AppLogger.e('S3 upload timed out');
       ToastService.showError('Upload timed out. Check your connection and try again.');
-      await UploadNotificationService.showError(title: 'Upload Failed');
+      await UploadNotificationService.showError(
+          notificationId: _currentNotifId!,
+          title: 'Upload Failed',
+        );
       await UploadNotificationService.stopService();
       return false;
     } catch (e) {
       AppLogger.e('S3 upload failed: $e');
       ToastService.showError('File upload failed');
-      await UploadNotificationService.showError(title: 'Upload Failed');
+      await UploadNotificationService.showError(
+          notificationId: _currentNotifId!,
+          title: 'Upload Failed',
+        );
       await UploadNotificationService.stopService();
       return false;
     } finally {

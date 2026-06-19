@@ -56,6 +56,11 @@ class VideoPostProvider extends ChangeNotifier {
   XFile? _videoFile;
   XFile? get videoFile => _videoFile;
 
+  int? _currentNotifId;
+  http.Client? _activeClient;
+  bool _isPicking = false;
+  bool get isPicking => _isPicking;
+
   String get buttonText {
     switch (_step) {
       case VideoUploadStep.gettingUrl:
@@ -74,6 +79,9 @@ class VideoPostProvider extends ChangeNotifier {
   }
 
   Future<XFile?> pickVideo() async {
+    if (_isPicking) return null;
+    _isPicking = true;
+    notifyListeners();
     try {
       final file = await _imagePicker.pickVideo(source: ImageSource.gallery);
       if (file != null) {
@@ -84,21 +92,31 @@ class VideoPostProvider extends ChangeNotifier {
     } catch (e) {
       ToastService.showError('Failed to open gallery');
       return null;
+    } finally {
+      _isPicking = false;
+      notifyListeners();
     }
   }
 
   void reset() {
+    _activeClient?.close();
+    _activeClient = null;
     _step = VideoUploadStep.idle;
     _errorMessage = null;
     _videoFile = null;
     _uploadProgress = 0.0;
-    UploadNotificationService.cancel();
+    if (_currentNotifId != null) {
+      UploadNotificationService.cancel(notificationId: _currentNotifId);
+    }
+    _currentNotifId = null;
     notifyListeners();
   }
 
   Future<bool> uploadVideoPost({
     required String title,
   }) async {
+    _currentNotifId = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final notifId = _currentNotifId!;
     _step = VideoUploadStep.gettingUrl;
     _errorMessage = null;
     notifyListeners();
@@ -108,6 +126,7 @@ class VideoPostProvider extends ChangeNotifier {
       final videoName = videoFile.name;
       final videoContentType = _inferVideoContentType(videoName);
 
+      await UploadNotificationService.requestNotificationPermission();
       await UploadNotificationService.startService();
 
       final urlsResponse = await getNetworkCaller().postRequest(
@@ -123,7 +142,10 @@ class VideoPostProvider extends ChangeNotifier {
         _errorMessage = urlsResponse.errorMessage;
         AppLogger.e('VideoPost: upload-urls failed — ${urlsResponse.responseCode}, $_errorMessage');
         ToastService.showError('Failed to get upload URL');
-        await UploadNotificationService.showError(title: 'Upload Failed');
+        await UploadNotificationService.showError(
+          notificationId: notifId,
+          title: 'Upload Failed',
+        );
         await UploadNotificationService.stopService();
         notifyListeners();
         return false;
@@ -137,7 +159,10 @@ class VideoPostProvider extends ChangeNotifier {
         _step = VideoUploadStep.error;
         _errorMessage = 'Invalid response from server';
         ToastService.showError('Failed to get upload URL');
-        await UploadNotificationService.showError(title: 'Upload Failed');
+        await UploadNotificationService.showError(
+          notificationId: notifId,
+          title: 'Upload Failed',
+        );
         await UploadNotificationService.stopService();
         notifyListeners();
         return false;
@@ -150,7 +175,10 @@ class VideoPostProvider extends ChangeNotifier {
         _step = VideoUploadStep.error;
         _errorMessage = 'Invalid upload info from server';
         ToastService.showError('Failed to get upload URL');
-        await UploadNotificationService.showError(title: 'Upload Failed');
+        await UploadNotificationService.showError(
+          notificationId: notifId,
+          title: 'Upload Failed',
+        );
         await UploadNotificationService.stopService();
         notifyListeners();
         return false;
@@ -182,7 +210,10 @@ class VideoPostProvider extends ChangeNotifier {
         _step = VideoUploadStep.error;
         _errorMessage = postResponse.errorMessage;
         ToastService.showError(postResponse.errorMessage ?? 'Failed to create post');
-        await UploadNotificationService.showError(title: 'Upload Failed');
+        await UploadNotificationService.showError(
+          notificationId: notifId,
+          title: 'Upload Failed',
+        );
         await UploadNotificationService.stopService();
         notifyListeners();
         return false;
@@ -190,7 +221,10 @@ class VideoPostProvider extends ChangeNotifier {
 
       _step = VideoUploadStep.done;
       ToastService.showSuccess('Video post created successfully');
-      await UploadNotificationService.showSuccess(title: 'Upload Complete');
+      await UploadNotificationService.showSuccess(
+        notificationId: notifId,
+        title: 'Upload Complete',
+      );
       await UploadNotificationService.stopService();
       notifyListeners();
       return true;
@@ -199,7 +233,10 @@ class VideoPostProvider extends ChangeNotifier {
       _errorMessage = e.toString();
       AppLogger.e('VideoPost: unexpected error — $_errorMessage');
       ToastService.showError('Something went wrong. Please try again.');
-      await UploadNotificationService.showError(title: 'Upload Failed');
+      await UploadNotificationService.showError(
+          notificationId: notifId,
+          title: 'Upload Failed',
+        );
       await UploadNotificationService.stopService();
       notifyListeners();
       return false;
@@ -222,7 +259,7 @@ class VideoPostProvider extends ChangeNotifier {
         handleData: (chunk, sink) {
           sent += chunk.length;
           final pct = total > 0 ? (sent * 100 ~/ total) : 0;
-          if (pct != lastPct) {
+            if (pct != lastPct) {
             lastPct = pct;
             _uploadProgress = sent / total;
             final now = DateTime.now();
@@ -230,12 +267,15 @@ class VideoPostProvider extends ChangeNotifier {
               lastUiUpdate = now;
               notifyListeners();
             }
-            UploadNotificationService.showProgress(
-              progress: sent,
-              total: total,
-              title: 'Uploading Video',
-              fileName: file.name,
-            );
+            if (_currentNotifId != null) {
+              UploadNotificationService.showProgress(
+                notificationId: _currentNotifId!,
+                progress: sent,
+                total: total,
+                title: 'Uploading Video',
+                fileName: file.name,
+              );
+            }
           }
           sink.add(chunk);
         },
@@ -251,6 +291,7 @@ class VideoPostProvider extends ChangeNotifier {
     request.contentLength = total;
 
     final client = http.Client();
+    _activeClient = client;
 
     try {
       final response = await client.send(request).timeout(const Duration(hours: 6));
@@ -270,6 +311,7 @@ class VideoPostProvider extends ChangeNotifier {
     } finally {
       _uploadProgress = 0.0;
       notifyListeners();
+      if (_activeClient == client) _activeClient = null;
       client.close();
     }
   }

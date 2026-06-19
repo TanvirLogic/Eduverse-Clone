@@ -128,6 +128,7 @@ class BackgroundUploadService {
         }
 
         await UploadNotificationService.showProgress(
+          notificationId: next.id!,
           progress: 0,
           total: 100,
           title: 'Preparing ${next.title}',
@@ -144,7 +145,9 @@ class BackgroundUploadService {
     _isRunning = false;
 
     if (!_paused) {
+      final queueDoneId = DateTime.now().millisecondsSinceEpoch ~/ 1000;
       await UploadNotificationService.showSuccess(
+        notificationId: queueDoneId,
         title: 'All Uploads Complete',
         body: 'All videos in the queue have been processed.',
       );
@@ -174,6 +177,7 @@ class BackgroundUploadService {
       await _sendProgress(service, item.id!, 'completed', 100);
 
       await UploadNotificationService.showSuccess(
+        notificationId: item.id!,
         title: item.title,
         body: 'Upload complete',
       );
@@ -188,11 +192,13 @@ class BackgroundUploadService {
 
       if (isNetworkError) {
         await UploadNotificationService.showError(
+          notificationId: item.id!,
           title: item.title,
           body: 'Network paused',
         );
       } else {
         await UploadNotificationService.showError(
+          notificationId: item.id!,
           title: item.title,
           body: 'Upload failed',
         );
@@ -246,6 +252,7 @@ class BackgroundUploadService {
     await UploadQueueRepository.markFailed(item.id!, 'Failed to get upload URL');
     await _sendProgress(service, item.id!, 'failed', 0);
     await UploadNotificationService.showError(
+      notificationId: item.id!,
       title: item.title,
       body: 'Failed to get upload URL',
     );
@@ -285,6 +292,7 @@ class BackgroundUploadService {
                 lastReportedPct = pct;
                 _sendProgress(service, item.id!, 'uploading', pct);
                 UploadNotificationService.showProgress(
+                  notificationId: item.id!,
                   progress: sent,
                   total: total,
                   title: item.title,

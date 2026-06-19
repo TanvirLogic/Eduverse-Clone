@@ -50,6 +50,11 @@ class CourseUploadProvider extends ChangeNotifier {
   double _uploadProgress = 0.0;
   double get uploadProgress => _uploadProgress;
 
+  bool _isPickingThumbnail = false;
+  bool get isPickingThumbnail => _isPickingThumbnail;
+  bool _isPickingVideo = false;
+  bool get isPickingVideo => _isPickingVideo;
+
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
@@ -64,6 +69,7 @@ class CourseUploadProvider extends ChangeNotifier {
 
   bool _isCancelled = false;
   http.Client? _activeClient;
+  int? _currentNotifId;
 
   void cancel() {
     _isCancelled = true;
@@ -71,7 +77,9 @@ class CourseUploadProvider extends ChangeNotifier {
     _activeClient = null;
     _step = UploadStep.idle;
     _uploadProgress = 0.0;
-    UploadNotificationService.cancel();
+    if (_currentNotifId != null) {
+      UploadNotificationService.cancel(notificationId: _currentNotifId);
+    }
     UploadNotificationService.stopService();
     notifyListeners();
   }
@@ -98,6 +106,9 @@ class CourseUploadProvider extends ChangeNotifier {
   }
 
   Future<XFile?> pickThumbnail() async {
+    if (_isPickingThumbnail) return null;
+    _isPickingThumbnail = true;
+    notifyListeners();
     try {
       final file = await _imagePicker.pickImage(
         source: ImageSource.gallery,
@@ -112,10 +123,16 @@ class CourseUploadProvider extends ChangeNotifier {
     } catch (e) {
       ToastService.showError('Failed to open gallery');
       return null;
+    } finally {
+      _isPickingThumbnail = false;
+      notifyListeners();
     }
   }
 
   Future<XFile?> pickVideo() async {
+    if (_isPickingVideo) return null;
+    _isPickingVideo = true;
+    notifyListeners();
     try {
       final file = await _imagePicker.pickVideo(source: ImageSource.gallery);
       if (file != null) {
@@ -126,6 +143,9 @@ class CourseUploadProvider extends ChangeNotifier {
     } catch (e) {
       ToastService.showError('Failed to open gallery');
       return null;
+    } finally {
+      _isPickingVideo = false;
+      notifyListeners();
     }
   }
 
@@ -145,7 +165,10 @@ class CourseUploadProvider extends ChangeNotifier {
     _createdCourseId = null;
     _thumbnailFile = null;
     _videoFile = null;
-    UploadNotificationService.cancel();
+    if (_currentNotifId != null) {
+      UploadNotificationService.cancel(notificationId: _currentNotifId);
+    }
+    _currentNotifId = null;
     UploadNotificationService.stopService();
     notifyListeners();
   }
@@ -237,9 +260,11 @@ class CourseUploadProvider extends ChangeNotifier {
   }) async {
     _isCancelled = false;
     _errorMessage = null;
+    _currentNotifId = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     notifyListeners();
 
     try {
+      await UploadNotificationService.requestNotificationPermission();
       await UploadNotificationService.startService();
       _step = UploadStep.uploadingUrls;
       notifyListeners();
@@ -268,7 +293,10 @@ class CourseUploadProvider extends ChangeNotifier {
         _errorMessage = urlsResponse.errorMessage;
         AppLogger.e('CourseUpload: upload-urls failed — code=${urlsResponse.responseCode}, error=$_errorMessage, body=${urlsResponse.responseData}');
         ToastService.showError('Failed to get upload URL');
-        await UploadNotificationService.showError(title: 'Upload Failed');
+        await UploadNotificationService.showError(
+          notificationId: _currentNotifId!,
+          title: 'Upload Failed',
+        );
         await UploadNotificationService.stopService();
         notifyListeners();
         return false;
@@ -284,7 +312,10 @@ class CourseUploadProvider extends ChangeNotifier {
         _errorMessage = 'Invalid response from server';
         AppLogger.e('CourseUpload: unexpected response format — $raw');
         ToastService.showError('Failed to get upload URL');
-        await UploadNotificationService.showError(title: 'Upload Failed');
+        await UploadNotificationService.showError(
+          notificationId: _currentNotifId!,
+          title: 'Upload Failed',
+        );
         await UploadNotificationService.stopService();
         notifyListeners();
         return false;
@@ -294,7 +325,10 @@ class CourseUploadProvider extends ChangeNotifier {
         _step = UploadStep.error;
         _errorMessage = 'Missing thumbnail upload info';
         ToastService.showError('Failed to get upload URL');
-        await UploadNotificationService.showError(title: 'Upload Failed');
+        await UploadNotificationService.showError(
+          notificationId: _currentNotifId!,
+          title: 'Upload Failed',
+        );
         await UploadNotificationService.stopService();
         notifyListeners();
         return false;
@@ -305,7 +339,10 @@ class CourseUploadProvider extends ChangeNotifier {
         _step = UploadStep.error;
         _errorMessage = 'Invalid thumbnail upload info';
         ToastService.showError('Failed to get upload URL');
-        await UploadNotificationService.showError(title: 'Upload Failed');
+        await UploadNotificationService.showError(
+          notificationId: _currentNotifId!,
+          title: 'Upload Failed',
+        );
         await UploadNotificationService.stopService();
         notifyListeners();
         return false;
@@ -359,7 +396,10 @@ class CourseUploadProvider extends ChangeNotifier {
         _createdCourseId = (data is Map<String, dynamic>) ? data['id']?.toString() : null;
         _step = UploadStep.done;
         ToastService.showSuccess('Course created successfully');
-        await UploadNotificationService.showSuccess(title: 'Course Created');
+        await UploadNotificationService.showSuccess(
+          notificationId: _currentNotifId!,
+          title: 'Course Created',
+        );
         await UploadNotificationService.stopService();
         notifyListeners();
         return true;
@@ -367,7 +407,10 @@ class CourseUploadProvider extends ChangeNotifier {
         _step = UploadStep.error;
         _errorMessage = courseResponse.errorMessage;
         ToastService.showError(courseResponse.errorMessage ?? 'Failed to create course');
-        await UploadNotificationService.showError(title: 'Upload Failed');
+        await UploadNotificationService.showError(
+          notificationId: _currentNotifId!,
+          title: 'Upload Failed',
+        );
         await UploadNotificationService.stopService();
         notifyListeners();
         return false;
@@ -384,7 +427,10 @@ class CourseUploadProvider extends ChangeNotifier {
       _errorMessage = e.toString();
       AppLogger.e('CourseUpload: unexpected error — $_errorMessage');
       ToastService.showError('Something went wrong. Please try again.');
-      await UploadNotificationService.showError(title: 'Upload Failed');
+      await UploadNotificationService.showError(
+          notificationId: _currentNotifId!,
+          title: 'Upload Failed',
+        );
       await UploadNotificationService.stopService();
       notifyListeners();
       return false;
@@ -416,6 +462,7 @@ class CourseUploadProvider extends ChangeNotifier {
               notifyListeners();
             }
             UploadNotificationService.showProgress(
+              notificationId: _currentNotifId!,
               progress: sent,
               total: total,
               title: 'Uploading Course Assets',

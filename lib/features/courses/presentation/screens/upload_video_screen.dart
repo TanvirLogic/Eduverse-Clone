@@ -36,7 +36,10 @@ class _UploadVideoScreenState extends State<UploadVideoScreen> {
     super.didChangeDependencies();
     if (!_didReset) {
       _didReset = true;
-      context.read<VideoPostProvider>().reset();
+      final provider = context.read<VideoPostProvider>();
+      if (!provider.isLoading) {
+        provider.reset();
+      }
     }
   }
 
@@ -96,7 +99,8 @@ class _UploadVideoScreenState extends State<UploadVideoScreen> {
                         return UploadZone(
                           cs: cs,
                           isDark: isDark,
-                          onTap: () => provider.pickVideo(),
+                          isPicking: provider.isPicking,
+                          onTap: provider.isPicking ? null : () => provider.pickVideo(),
                           selectedFileName: provider.videoFile?.name,
                         );
                       },

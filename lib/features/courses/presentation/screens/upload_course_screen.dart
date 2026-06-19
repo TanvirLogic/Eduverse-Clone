@@ -194,11 +194,16 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
                         builder: (context, provider, _) {
                           final name = provider.thumbnailFile?.name;
                           return InkWell(
-                            onTap: () => provider.pickThumbnail(),
+                            onTap: provider.isPickingThumbnail
+                                ? null
+                                : () => provider.pickThumbnail(),
                             borderRadius: BorderRadius.circular(
                               AppSizes.radiusDef,
                             ),
-                            child: Ink(
+                            child: AnimatedOpacity(
+                              opacity: provider.isPickingThumbnail ? 0.5 : 1.0,
+                              duration: const Duration(milliseconds: 200),
+                              child: Ink(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 14,
@@ -254,6 +259,7 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
                                     ),
                                   ),
                                 ],
+                                ),
                               ),
                             ),
                           );
@@ -267,7 +273,10 @@ class _UploadCourseScreenState extends State<UploadCourseScreen> {
                           return UploadZone(
                             cs: cs,
                             isDark: isDark,
-                            onTap: () => provider.pickVideo(),
+                            isPicking: provider.isPickingVideo,
+                            onTap: provider.isPickingVideo
+                                ? null
+                                : () => provider.pickVideo(),
                             selectedFileName: provider.videoFile?.name,
                           );
                         },
