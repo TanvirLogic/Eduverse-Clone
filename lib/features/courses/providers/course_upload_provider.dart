@@ -169,10 +169,16 @@ class CourseUploadProvider extends ChangeNotifier {
     if (thumbnail != null) {
       presignedBody['thumbnailFilename'] = thumbnail.name;
       presignedBody['thumbnailContentType'] = _inferImageContentType(thumbnail.name);
+    } else {
+      presignedBody['thumbnailFilename'] = 'keep.jpg';
+      presignedBody['thumbnailContentType'] = 'image/jpeg';
     }
     if (video != null) {
       presignedBody['videoFilename'] = video.name;
       presignedBody['videoContentType'] = _inferVideoContentType(video.name);
+    } else {
+      presignedBody['videoFilename'] = 'keep.mp4';
+      presignedBody['videoContentType'] = 'video/mp4';
     }
 
     final urlsResponse = await getNetworkCaller().postRequest(
@@ -248,12 +254,51 @@ class CourseUploadProvider extends ChangeNotifier {
     VoidCallback? onCourseUpdated,
   }) async {
     try {
-      // Step 2: Upload files to S3
+      await UploadNotificationService.requestNotificationPermission();
+      await UploadNotificationService.startService();
+
+      final notifId = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
       for (final upload in uploads) {
-        await _directUploadToS3(upload.uploadUrl, upload.file, upload.contentType);
+        final total = await upload.file.length();
+        final stream = upload.file.openRead().cast<List<int>>();
+
+        int sent = 0;
+        int sentPct = -1;
+        final progressStream = stream.transform(
+          StreamTransformer<List<int>, List<int>>.fromHandlers(
+            handleData: (chunk, sink) {
+              sent += chunk.length;
+              final pct = total > 0 ? (sent * 100 ~/ total) : 0;
+              if (pct > sentPct) {
+                sentPct = pct;
+                UploadNotificationService.showProgress(
+                  notificationId: notifId,
+                  progress: sent,
+                  total: total,
+                  title: upload.file.name,
+                );
+              }
+              sink.add(chunk);
+            },
+          ),
+        );
+
+        final request = _StreamedProgressRequest('PUT', Uri.parse(upload.uploadUrl), progressStream);
+        request.headers['Content-Type'] = upload.contentType;
+        request.contentLength = total;
+
+        final client = http.Client();
+        try {
+          final response = await client.send(request).timeout(const Duration(minutes: 5));
+          if (response.statusCode != 200) {
+            throw HttpException('Upload failed: ${response.statusCode}');
+          }
+        } finally {
+          client.close();
+        }
       }
 
-      // Step 3: PUT /course
       final response = await getNetworkCaller().putRequest(
         url: Urls.updateCourseUrl,
         body: callbackBody,
@@ -262,25 +307,30 @@ class CourseUploadProvider extends ChangeNotifier {
       if (response.isSuccess) {
         onCourseUpdated?.call();
         ToastService.showSuccess('Course updated successfully');
+        await UploadNotificationService.showSuccess(
+          notificationId: notifId,
+          title: 'Course Update',
+          body: 'Course updated successfully',
+        );
       } else {
         AppLogger.w('_completeUploadEdit: PUT /course failed — ${response.errorMessage}');
         ToastService.showError(response.errorMessage ?? 'Failed to update course');
+        await UploadNotificationService.showError(
+          notificationId: notifId,
+          title: 'Course Update',
+          body: response.errorMessage ?? 'Failed to update course',
+        );
       }
     } catch (e) {
       AppLogger.e('_completeUploadEdit: error — $e');
       ToastService.showError('Failed to update course: $e');
-    }
-  }
-
-  Future<void> _directUploadToS3(String url, XFile file, String contentType) async {
-    final bytes = await file.readAsBytes();
-    final response = await http.put(
-      Uri.parse(url),
-      headers: {'Content-Type': contentType},
-      body: bytes,
-    ).timeout(const Duration(minutes: 5));
-    if (response.statusCode != 200) {
-      throw HttpException('Upload failed: ${response.statusCode}');
+      await UploadNotificationService.showError(
+        notificationId: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        title: 'Course Update',
+        body: 'Upload failed: $e',
+      );
+    } finally {
+      await UploadNotificationService.stopService();
     }
   }
 

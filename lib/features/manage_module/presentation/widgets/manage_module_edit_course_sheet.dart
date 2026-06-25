@@ -19,6 +19,8 @@ class ManageModuleEditCourseSheet extends StatefulWidget {
   final String courseLevel;
   final String courseType;
   final double coursePrice;
+  final String? courseThumbnailUrl;
+  final String? courseIntroVideoUrl;
   final Future<bool> Function(Map<String, dynamic> body) onSave;
   final VoidCallback onCourseRefreshed;
 
@@ -33,6 +35,8 @@ class ManageModuleEditCourseSheet extends StatefulWidget {
     required this.courseLevel,
     required this.courseType,
     required this.coursePrice,
+    required this.courseThumbnailUrl,
+    required this.courseIntroVideoUrl,
     required this.onSave,
     required this.onCourseRefreshed,
   });
@@ -48,6 +52,8 @@ class ManageModuleEditCourseSheet extends StatefulWidget {
     required String courseLevel,
     required String courseType,
     required double coursePrice,
+    required String? courseThumbnailUrl,
+    required String? courseIntroVideoUrl,
     required Future<bool> Function(Map<String, dynamic> body) onSave,
     required VoidCallback onCourseRefreshed,
   }) {
@@ -70,6 +76,8 @@ class ManageModuleEditCourseSheet extends StatefulWidget {
         courseLevel: courseLevel,
         courseType: courseType,
         coursePrice: coursePrice,
+        courseThumbnailUrl: courseThumbnailUrl,
+        courseIntroVideoUrl: courseIntroVideoUrl,
         onSave: onSave,
         onCourseRefreshed: onCourseRefreshed,
       ),
@@ -164,6 +172,10 @@ class _ManageModuleEditCourseSheetState
       final video = uploadProvider.videoFile;
 
       if (thumbnail != null || video != null) {
+        body['thumbnailUrl'] = widget.courseThumbnailUrl;
+        body['introVideoUrl'] = widget.courseIntroVideoUrl;
+
+        setState(() => _saving = true);
         final ok = await uploadProvider.uploadEditAssets(
           thumbnail: thumbnail,
           video: video,
@@ -171,7 +183,10 @@ class _ManageModuleEditCourseSheetState
           courseId: widget.courseId,
           onCourseUpdated: widget.onCourseRefreshed,
         );
-        if (!ok) return;
+        if (!ok) {
+          setState(() => _saving = false);
+          return;
+        }
       } else {
         setState(() => _saving = true);
         await widget.onSave(body);

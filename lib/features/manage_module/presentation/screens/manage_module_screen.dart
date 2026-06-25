@@ -108,6 +108,8 @@ class _ManageModuleBodyState extends State<_ManageModuleBody> {
                           courseLevel: provider.courseLevel,
                           courseType: provider.courseType,
                           coursePrice: provider.coursePrice,
+                          courseThumbnailUrl: provider.courseThumbnailUrl,
+                          courseIntroVideoUrl: provider.courseIntroVideoUrl,
                           onSave: provider.updateCourse,
                           onCourseRefreshed: provider.refresh,
                         ),

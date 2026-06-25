@@ -503,6 +503,7 @@ class ManageModuleProvider extends ChangeNotifier {
           // Wait 2 cycles (4 seconds) to confirm native is truly gone
           // before marking as completed (avoids false positive on slow reads)
           if (emptyNativeReads >= 2) {
+            bool completedAny = false;
             for (final entry in _queueItemToLesson.entries) {
               final lesson = _findLessonById(entry.value);
               if (lesson != null && lesson.uploadStatus != 'completed') {
@@ -511,11 +512,15 @@ class ManageModuleProvider extends ChangeNotifier {
                 if (cachedUrl != null && cachedUrl.isNotEmpty) {
                   _setLessonUrl(lesson, cachedUrl);
                 }
+                completedAny = true;
                 updated = true;
               }
             }
             _queueItemToLesson.clear();
             _pendingFileUrls.clear();
+            if (completedAny) {
+              ToastService.showSuccess('Upload completed successfully');
+            }
           }
         } else if (items.isNotEmpty) {
           emptyNativeReads = 0;
@@ -561,6 +566,7 @@ class ManageModuleProvider extends ChangeNotifier {
               }
               _queueItemToLesson.remove(queueId);
               _pendingFileUrls.remove(queueId);
+              ToastService.showSuccess('Upload completed successfully');
             } else if (status == 'failed') {
               _queueItemToLesson.remove(queueId);
               _pendingFileUrls.remove(queueId);

@@ -20,6 +20,8 @@ class UnifiedUploadQueueProvider extends ChangeNotifier {
   List<UploadQueueItem> _queue = [];
   UploadQueueItem? _activeItem;
   int _activeProgress = 0;
+  Timer? _nativeCompletionTimer;
+  int _lastNativeTotal = 0;
 
   List<UploadQueueItem> get queue => List.unmodifiable(_queue);
   UploadQueueItem? get activeItem => _activeItem;
@@ -75,6 +77,30 @@ class UnifiedUploadQueueProvider extends ChangeNotifier {
     }
   }
 
+  void _startNativeCompletionPolling() {
+    _nativeCompletionTimer?.cancel();
+    _lastNativeTotal = 1;
+    _nativeCompletionTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
+      try {
+        final status = await NativeUploadBridge.getNativeQueueStatus();
+        final total = (status['totalItems'] as num?)?.toInt() ?? 0;
+        final completing = (status['completed'] as num?)?.toInt() ?? 0;
+        final failed = (status['failed'] as num?)?.toInt() ?? 0;
+        if (_lastNativeTotal > 0 && total == 0 && (completing > 0 || failed > 0)) {
+          ToastService.showSuccess('Upload completed successfully');
+          _nativeCompletionTimer?.cancel();
+          _nativeCompletionTimer = null;
+        }
+        _lastNativeTotal = total;
+      } catch (_) {}
+    });
+  }
+
+  void _stopNativeCompletionPolling() {
+    _nativeCompletionTimer?.cancel();
+    _nativeCompletionTimer = null;
+  }
+
   // ──────────────────────────────────────────────
   //  Public queue methods
   // ──────────────────────────────────────────────
@@ -109,6 +135,7 @@ class UnifiedUploadQueueProvider extends ChangeNotifier {
       final result = await _fetchAndSyncVideoPost(file, title, duration, fileSize, id);
       if (result) {
         ToastService.showSuccess('Video queued for upload');
+        _startNativeCompletionPolling();
         return true;
       }
       return false;
@@ -252,6 +279,7 @@ class UnifiedUploadQueueProvider extends ChangeNotifier {
       return 0;
     }
     ToastService.showSuccess('Course upload queued');
+    _startNativeCompletionPolling();
     return id;
   }
 
@@ -360,6 +388,7 @@ class UnifiedUploadQueueProvider extends ChangeNotifier {
       return 0;
     }
     ToastService.showSuccess('Video lesson queued');
+    _startNativeCompletionPolling();
     return id;
   }
 
@@ -469,6 +498,7 @@ class UnifiedUploadQueueProvider extends ChangeNotifier {
       return 0;
     }
     ToastService.showSuccess('Resource queued');
+    _startNativeCompletionPolling();
     return id;
   }
 
@@ -823,4 +853,9 @@ class UnifiedUploadQueueProvider extends ChangeNotifier {
     return true;
   }
 
+  @override
+  void dispose() {
+    _stopNativeCompletionPolling();
+    super.dispose();
+  }
 }
