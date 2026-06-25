@@ -24,6 +24,7 @@ class ManageModuleProvider extends ChangeNotifier {
   final List<CourseModule> _modules = [];
   final Map<int, String> _videoUrlCache = {};
   final Map<int, int> _queueItemToLesson = {};
+  final Map<int, String> _pendingFileUrls = {};
   Timer? _progressTimer;
   bool _hasUnsavedChanges = false;
 
@@ -495,7 +496,7 @@ class ManageModuleProvider extends ChangeNotifier {
 
         // If native state is empty but we still have queued lessons,
         // the native service completed and deleted the state file.
-        // Mark all queued lessons as completed.
+        // Mark all queued lessons as completed using cached fileUrls.
         if (items.isEmpty && _queueItemToLesson.isNotEmpty) {
           emptyNativeReads++;
           // Wait 2 cycles (4 seconds) to confirm native is truly gone
@@ -505,10 +506,15 @@ class ManageModuleProvider extends ChangeNotifier {
               final lesson = _findLessonById(entry.value);
               if (lesson != null && lesson.uploadStatus != 'completed') {
                 lesson.uploadStatus = 'completed';
+                final cachedUrl = _pendingFileUrls.remove(entry.key);
+                if (cachedUrl != null && cachedUrl.isNotEmpty) {
+                  lesson.videoUrl ??= cachedUrl;
+                }
                 updated = true;
               }
             }
             _queueItemToLesson.clear();
+            _pendingFileUrls.clear();
           }
         } else if (items.isNotEmpty) {
           emptyNativeReads = 0;
@@ -522,6 +528,7 @@ class ManageModuleProvider extends ChangeNotifier {
             final lesson = _findLessonById(lessonId);
             if (lesson == null) {
               _queueItemToLesson.remove(queueId);
+              _pendingFileUrls.remove(queueId);
               continue;
             }
 
@@ -536,14 +543,26 @@ class ManageModuleProvider extends ChangeNotifier {
               updated = true;
             }
 
+            // Cache fileUrl while native state is still available
+            final fileUrl = item['fileUrl'] as String?;
+            if (fileUrl != null && fileUrl.isNotEmpty) {
+              _pendingFileUrls[queueId] = fileUrl;
+            }
+
             if (status == 'completed') {
-              final fileUrl = item['fileUrl'] as String?;
               if (fileUrl != null && fileUrl.isNotEmpty) {
                 lesson.videoUrl ??= fileUrl;
+              } else {
+                final cachedUrl = _pendingFileUrls.remove(queueId);
+                if (cachedUrl != null && cachedUrl.isNotEmpty) {
+                  lesson.videoUrl ??= cachedUrl;
+                }
               }
               _queueItemToLesson.remove(queueId);
+              _pendingFileUrls.remove(queueId);
             } else if (status == 'failed') {
               _queueItemToLesson.remove(queueId);
+              _pendingFileUrls.remove(queueId);
             }
           }
         }
