@@ -1,11 +1,11 @@
 name: Free iOS Build
 on:
   push:
-    branches: [ main ] # Runs automatically every time you push code to 'main'
+    branches: [ main ]
 
 jobs:
   build:
-    runs-on: macos-latest # Uses GitHub's free virtual Mac servers
+    runs-on: macos-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -15,10 +15,23 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Install Dependencies
-        run: flutter pub get
+      - name: Install System Dependencies
+        run: |
+          brew install cocoapods
 
-      - name: Build iOS Payload
+      - name: Clear Cache and Get Packages
+        run: |
+          flutter clean
+          flutter pub get
+
+      - name: Setup iOS Pods
+        run: |
+          cd ios
+          pod repo update
+          pod install --repo-update
+          cd ..
+
+      - name: Build iOS Payload (Unsigned IPA)
         run: |
           flutter build ios --release --no-codesign
           mkdir -p Payload
