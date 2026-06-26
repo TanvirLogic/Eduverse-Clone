@@ -597,6 +597,10 @@ class ManageModuleProvider extends ChangeNotifier {
         if (_queueItemToLesson.isEmpty) {
           _progressTimer?.cancel();
           _progressTimer = null;
+          if (_notifiedCompletions.isNotEmpty) {
+            UploadQueueRepository.clearCompleted();
+            _fetchCourse();
+          }
         }
       } catch (e) {
         AppLogger.e('_startProgressPolling error: $e');

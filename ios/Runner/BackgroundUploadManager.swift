@@ -16,11 +16,12 @@ struct QueueItem: Codable {
     var status: String
     var errorMessage: String?
     var progress: Double?
+    var attempts: Int = 0
 
     enum CodingKeys: String, CodingKey {
         case id, filePath, title, uploadUrl, fileUrl, contentType, uploadType
         case metadata, callbackUrl, callbackBody, authToken
-        case status, errorMessage, progress
+        case status, errorMessage, progress, attempts
     }
 }
 
@@ -268,11 +269,23 @@ struct UploadState: Codable {
         }
 
         if let error = error {
-            state.items[index].status = "failed"
-            state.items[index].errorMessage = error.localizedDescription
-            saveQueueState(state)
-            scheduleLocalNotification(title: "Upload Failed", body: state.items[index].title)
-            processNextInQueue()
+            let maxRetries = 2
+            if state.items[index].attempts < maxRetries {
+                state.items[index].attempts += 1
+                state.items[index].status = "pending"
+                state.items[index].errorMessage = "Retry \(state.items[index].attempts): \(error.localizedDescription)"
+                saveQueueState(state)
+                let delay = Double(state.items[index].attempts) * 5.0
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                    self.processNextInQueue()
+                }
+            } else {
+                state.items[index].status = "failed"
+                state.items[index].errorMessage = error.localizedDescription
+                saveQueueState(state)
+                scheduleLocalNotification(title: "Upload Failed", body: state.items[index].title)
+                processNextInQueue()
+            }
             return
         }
 

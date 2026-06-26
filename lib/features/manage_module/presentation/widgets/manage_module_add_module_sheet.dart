@@ -31,6 +31,7 @@ class ManageModuleAddModuleSheet extends StatefulWidget {
 class _ManageModuleAddModuleSheetState
     extends State<ManageModuleAddModuleSheet> {
   final _titleController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -121,14 +122,20 @@ class _ManageModuleAddModuleSheetState
           AuthButton(
             text: 'Add Module',
             borderRadius: 24,
-            onPressed: () async {
-              final title = _titleController.text.trim();
-              if (title.isEmpty) return;
-              final success = await widget.onAddModule(title);
-              if (success && context.mounted) {
-                Navigator.of(context).pop();
-              }
-            },
+            isLoading: _isLoading,
+            onPressed: _isLoading
+                ? null
+                : () async {
+                    final title = _titleController.text.trim();
+                    if (title.isEmpty) return;
+                    setState(() => _isLoading = true);
+                    final success = await widget.onAddModule(title);
+                    if (!mounted) return;
+                    setState(() => _isLoading = false);
+                    if (success) {
+                      Navigator.of(context).pop();
+                    }
+                  },
           ),
           const SizedBox(height: 16),
         ],

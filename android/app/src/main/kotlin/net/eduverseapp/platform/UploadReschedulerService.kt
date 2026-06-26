@@ -155,7 +155,7 @@ class UploadReschedulerService : Service() {
             "Eduverse:UploadWakeLock"
         ).apply {
             setReferenceCounted(false)
-            acquire(60 * 60 * 1000L)
+            acquire()
         }
 
         val wifiManager = applicationContext.getSystemService(WIFI_SERVICE) as WifiManager
@@ -348,7 +348,7 @@ class UploadReschedulerService : Service() {
                 connection.doOutput = true
                 connection.useCaches = false
                 connection.connectTimeout = 60000
-                connection.readTimeout = 600000
+                connection.readTimeout = 1_800_000
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     connection.setFixedLengthStreamingMode(fileSize)

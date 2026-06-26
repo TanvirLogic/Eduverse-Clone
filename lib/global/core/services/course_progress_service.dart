@@ -7,10 +7,7 @@ class CourseProgressService {
   static const _storage = FlutterSecureStorage();
   static const _prefix = 'course_done_';
 
-  static Future<void> markLessonCompleted(
-    int courseId,
-    int lessonId,
-  ) async {
+  static Future<void> markLessonCompleted(int courseId, int lessonId) async {
     final key = '$_prefix$courseId';
     final existing = await _storage.read(key: key);
     final set = <int>{};
@@ -30,10 +27,7 @@ class CourseProgressService {
     return list.map((e) => e.toInt()).toSet();
   }
 
-  static Future<double> getProgress(
-    int courseId,
-    int totalVideoLessons,
-  ) async {
+  static Future<double> getProgress(int courseId, int totalVideoLessons) async {
     if (totalVideoLessons <= 0) return 0;
     final completed = await getCompletedLessonIds(courseId);
     return completed.length / totalVideoLessons;
