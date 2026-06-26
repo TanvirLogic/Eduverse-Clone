@@ -92,9 +92,7 @@ class AppRoutes {
       case uploadVideoPage:
         return MaterialPageRoute(builder: (_) => const UploadVideoScreen());
       case uploadCoursePage:
-        return MaterialPageRoute(
-          builder: (_) => const UploadCourseScreen(),
-        );
+        return MaterialPageRoute(builder: (_) => const UploadCourseScreen());
       case courseDetails:
         final args = settings.arguments as Map?;
         final courseId = (args?['courseId'] as int?) ?? 0;
@@ -146,6 +144,7 @@ class AppRoutes {
           builder: (_) =>
               FullScreenImageViewerScreen(imageUrl: imageUrl, heroTag: heroTag),
         );
+
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(

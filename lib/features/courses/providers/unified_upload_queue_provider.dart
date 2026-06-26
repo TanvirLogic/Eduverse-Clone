@@ -79,10 +79,9 @@ class UnifiedUploadQueueProvider extends ChangeNotifier {
 
   void _startNativeCompletionPolling() {
     _nativeCompletionTimer?.cancel();
-    _lastNativeTotal = 1;
+    _lastNativeTotal = -1;
     _nativeCompletionTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
       try {
-        // Fix A: Get per-item status from native and sync SQLite
         final queueData = await NativeUploadBridge.getQueueItems();
         final items = queueData['items'] as List<dynamic>? ?? [];
         bool hadCompleted = false;
@@ -91,21 +90,26 @@ class UnifiedUploadQueueProvider extends ChangeNotifier {
           final status = item['status'] as String? ?? 'pending';
           if (status == 'completed') {
             final queueId = item['id'] as int?;
+            final filePath = item['filePath'] as String?;
             if (queueId != null) {
               await UploadQueueRepository.markCompleted(queueId);
               hadCompleted = true;
             }
+            if (filePath != null) {
+              await UploadPathStorage.removePathByFilePath(filePath);
+            }
           }
         }
         if (hadCompleted) {
-          UploadQueueRepository.clearCompleted();
+          await UploadQueueRepository.clearCompleted();
         }
 
         final status = await NativeUploadBridge.getNativeQueueStatus();
         final total = (status['totalItems'] as num?)?.toInt() ?? 0;
-        final completing = (status['completed'] as num?)?.toInt() ?? 0;
-        final failed = (status['failed'] as num?)?.toInt() ?? 0;
-        if (_lastNativeTotal > 0 && total == 0 && (completing > 0 || failed > 0)) {
+
+        if (_lastNativeTotal > 0 && total == 0) {
+          await NativeUploadBridge.clearState();
+          await UploadPathStorage.clearAll();
           ToastService.showSuccess('Upload completed successfully');
           _nativeCompletionTimer?.cancel();
           _nativeCompletionTimer = null;

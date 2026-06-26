@@ -181,7 +181,9 @@ class _ManageModuleBodyState extends State<_ManageModuleBody> {
                                       cancelText: 'Cancel',
                                     );
                                     if (confirmed == true) {
-                                      final ok = await provider.deleteModule(module);
+                                      final ok = await provider.deleteModule(
+                                        module,
+                                      );
                                       if (ok) await provider.refresh();
                                       return ok;
                                     }
@@ -262,7 +264,9 @@ class _ManageModuleBodyState extends State<_ManageModuleBody> {
                                   },
                                   onTapVideo: (videoUrl, title) {
                                     if (videoUrl.isEmpty) {
-                                      ToastService.showError('Video URL not available');
+                                      ToastService.showError(
+                                        'Video URL not available',
+                                      );
                                       return;
                                     }
                                     Navigator.push(
@@ -277,7 +281,9 @@ class _ManageModuleBodyState extends State<_ManageModuleBody> {
                                   },
                                   onTapResource: (fileUrl, title) {
                                     if (fileUrl.isEmpty) {
-                                      ToastService.showError('Resource URL not available');
+                                      ToastService.showError(
+                                        'Resource URL not available',
+                                      );
                                       return;
                                     }
                                     launchUrl(

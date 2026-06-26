@@ -53,9 +53,7 @@ class ManageModuleProvider extends ChangeNotifier {
   Map<int, PendingLesson> get pendingLessons => _pendingLessons;
 
   List<PendingLesson> pendingLessonsForModule(int moduleId) {
-    return _pendingLessons.values
-        .where((p) => p.moduleId == moduleId)
-        .toList();
+    return _pendingLessons.values.where((p) => p.moduleId == moduleId).toList();
   }
 
   @override
@@ -100,7 +98,9 @@ class ManageModuleProvider extends ChangeNotifier {
       notifyListeners();
     }
     final response = await getNetworkCaller().getRequest(
+      // TODO : Use the actual courseId instead of hardcoding 2
       url: '${Urls.updateCourseUrl}?courseID=$courseId',
+      // url: '${Urls.updateCourseUrl}?courseID=2',
     );
     if (response.isSuccess) {
       final data = response.responseData['data'];
@@ -220,7 +220,8 @@ class ManageModuleProvider extends ChangeNotifier {
       // Check what native is currently processing to avoid restoring
       // items that completed while the provider was away.
       final nativeState = await NativeUploadBridge.getQueueItems();
-      final nativeIds = (nativeState['items'] as List<dynamic>?)
+      final nativeIds =
+          (nativeState['items'] as List<dynamic>?)
               ?.map((e) => (e as Map)['id'] as int?)
               .whereType<int>()
               .toSet() ??
@@ -256,9 +257,11 @@ class ManageModuleProvider extends ChangeNotifier {
         final alreadyExistsById = restoredLessonId != null
             ? _modules[moduleIndex].lessons.any((l) => l.id == restoredLessonId)
             : false;
-        final alreadyExistsByUrl = item.fileUrl != null && item.fileUrl!.isNotEmpty
+        final alreadyExistsByUrl =
+            item.fileUrl != null && item.fileUrl!.isNotEmpty
             ? _modules[moduleIndex].lessons.any(
-                (l) => l.videoUrl == item.fileUrl || l.fileUrl == item.fileUrl)
+                (l) => l.videoUrl == item.fileUrl || l.fileUrl == item.fileUrl,
+              )
             : false;
         if (alreadyExistsById || alreadyExistsByUrl) {
           if (alreadyExistsByUrl && item.id != null) {
@@ -558,10 +561,7 @@ class ManageModuleProvider extends ChangeNotifier {
     final pending = _pendingLessons[queueId];
     if (pending == null) return;
 
-    await UploadQueueRepository.updateStatus(
-      id: queueId,
-      status: 'cancelled',
-    );
+    await UploadQueueRepository.updateStatus(id: queueId, status: 'cancelled');
 
     _pendingLessons.remove(queueId);
 
@@ -573,27 +573,33 @@ class ManageModuleProvider extends ChangeNotifier {
     ToastService.showSuccess('Upload cancelled');
   }
 
-  Future<void> retryPendingLesson(int queueId, {UnifiedUploadQueueProvider? queueProvider}) async {
+  Future<void> retryPendingLesson(
+    int queueId, {
+    UnifiedUploadQueueProvider? queueProvider,
+  }) async {
     final pending = _pendingLessons[queueId];
     if (pending == null) return;
 
-    await UploadQueueRepository.updateStatus(
-      id: queueId,
-      status: 'pending',
-    );
+    await UploadQueueRepository.updateStatus(id: queueId, status: 'pending');
 
     // Resync the active queue to native (same pattern as native_init.dart)
     final activeItems = await UploadQueueRepository.getActive();
-    final nativeQueueJson = jsonEncode(activeItems.map((item) => {
-      'id': item.id,
-      'filePath': item.filePath,
-      'title': item.title,
-      'uploadUrl': item.uploadUrl,
-      'fileUrl': item.fileUrl,
-      'contentType': 'application/octet-stream',
-      'uploadType': item.uploadType,
-      'metadata': item.metadata,
-    }).toList());
+    final nativeQueueJson = jsonEncode(
+      activeItems
+          .map(
+            (item) => {
+              'id': item.id,
+              'filePath': item.filePath,
+              'title': item.title,
+              'uploadUrl': item.uploadUrl,
+              'fileUrl': item.fileUrl,
+              'contentType': 'application/octet-stream',
+              'uploadType': item.uploadType,
+              'metadata': item.metadata,
+            },
+          )
+          .toList(),
+    );
     await NativeUploadBridge.syncQueueToNative(nativeQueueJson);
     await NativeUploadBridge.startQueueProcessing();
 
@@ -732,7 +738,8 @@ class ManageModuleProvider extends ChangeNotifier {
             if (dbItem == null) {
               // Item deleted from SQLite (already completed and cleared)
               orphanedIds.add(entry.key);
-            } else if (dbItem.status == 'completed' || dbItem.status == 'failed') {
+            } else if (dbItem.status == 'completed' ||
+                dbItem.status == 'failed') {
               // SQLite status was updated separately
               orphanedIds.add(entry.key);
             } else if (dbItem.fileUrl != null && dbItem.fileUrl!.isNotEmpty) {
@@ -747,7 +754,6 @@ class ManageModuleProvider extends ChangeNotifier {
 
           for (final queueId in orphanedIds) {
             _pendingLessons.remove(queueId);
-        
           }
           if (orphanedIds.isNotEmpty) {
             completedIds.addAll(orphanedIds);
@@ -758,7 +764,6 @@ class ManageModuleProvider extends ChangeNotifier {
         // Remove completed items — failed items stay visible
         for (final queueId in completedIds) {
           _pendingLessons.remove(queueId);
-      
         }
         if (completedIds.isNotEmpty) {
           UploadQueueRepository.clearCompleted();
