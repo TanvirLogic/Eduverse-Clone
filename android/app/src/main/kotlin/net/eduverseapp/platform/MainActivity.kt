@@ -88,6 +88,7 @@ class MainActivity : FlutterActivity() {
                         val metadata = call.argument<String>("metadata")
                         val itemId = (call.argument<Int>("itemId")?.toLong()
                             ?: call.argument<Long>("itemId")) ?: -1L
+                        val uploadId = call.argument<String>("uploadId")
 
                         if (filePath == null || uploadUrl == null) {
                             result.error("INVALID_ARG", "filePath and uploadUrl required", null)
@@ -110,6 +111,7 @@ class MainActivity : FlutterActivity() {
                             callbackBody = callbackBody,
                             metadata = metadata,
                             status = UploadConstants.STATUS_PENDING,
+                            uploadId = uploadId,
                         )
                         existingItems.removeAll { it.id == itemId }
                         existingItems.add(newItem)
@@ -254,6 +256,47 @@ class MainActivity : FlutterActivity() {
                         } else {
                             startService(intent)
                         }
+                        result.success(true)
+                    }
+
+                    "ping" -> {
+                        val marker = java.io.File(filesDir, UploadReschedulerService.ALIVE_MARKER_FILE)
+                        result.success(marker.exists())
+                    }
+
+                    "onNativeUploadCompleted" -> {
+                        val itemId = call.argument<Int>("itemId")
+                        val fileUrl = call.argument<String>("fileUrl")
+                        if (itemId != null && fileUrl != null) {
+                            UploadStateManager.markItemStatus(this, itemId.toLong(), UploadConstants.STATUS_COMPLETED)
+                        }
+                        result.success(true)
+                    }
+
+                    "onNativeUploadFailed" -> {
+                        val itemId = call.argument<Int>("itemId")
+                        val error = call.argument<String>("error")
+                        if (itemId != null && error != null) {
+                            UploadStateManager.markItemStatus(this, itemId.toLong(), UploadConstants.STATUS_FAILED, error)
+                        }
+                        result.success(true)
+                    }
+
+                    "getNativeCompletedItems" -> {
+                        val completed = UploadStateManager.loadCompletedItems(this)
+                        val arr = JSONArray()
+                        for ((id, fileUrl) in completed) {
+                            val obj = JSONObject().apply {
+                                put("id", id)
+                                put("fileUrl", fileUrl)
+                            }
+                            arr.put(obj)
+                        }
+                        result.success(arr.toString())
+                    }
+
+                    "acknowledgeCompletedItems" -> {
+                        UploadStateManager.clearCompletedItems(this)
                         result.success(true)
                     }
 

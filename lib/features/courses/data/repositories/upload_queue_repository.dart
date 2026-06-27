@@ -1,10 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:edtech/features/courses/data/models/upload_task.dart';
 import 'package:edtech/global/core/services/logger_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
+
+String _generateUploadId() {
+  final now = DateTime.now().millisecondsSinceEpoch;
+  final rand = Random().nextInt(0x7FFFFFFF);
+  return 'up_${now}_$rand';
+}
 
 class UploadQueueItem {
   final int? id;
@@ -21,6 +28,13 @@ class UploadQueueItem {
   final String lastUpdated;
   final String uploadType;
   final String? metadata;
+  final String? uploadId;
+  final String? workerId;
+  final int? heartbeatMs;
+  final int retryCount;
+  final String? idempotencyKey;
+  final int nativeMarkedCompleted;
+  final int serverCallbackCompleted;
 
   UploadQueueItem({
     this.id,
@@ -37,10 +51,20 @@ class UploadQueueItem {
     String? lastUpdated,
     this.uploadType = 'video_post',
     this.metadata,
+    this.uploadId,
+    this.workerId,
+    this.heartbeatMs,
+    this.retryCount = 0,
+    this.idempotencyKey,
+    this.nativeMarkedCompleted = 0,
+    this.serverCallbackCompleted = 0,
   })  : createdAt = createdAt ?? DateTime.now().toIso8601String(),
         lastUpdated = lastUpdated ?? DateTime.now().toIso8601String();
 
   UploadTaskType get taskType => UploadTaskType.fromDb(uploadType);
+
+  bool get isNativeCompleted => nativeMarkedCompleted == 1;
+  bool get isCallbackCompleted => serverCallbackCompleted == 1;
 
   T? parseMetadata<T>(T Function(Map<String, dynamic>) fromJson) {
     if (metadata == null || metadata!.isEmpty) return null;
@@ -67,6 +91,13 @@ class UploadQueueItem {
     String? lastUpdated,
     String? uploadType,
     String? metadata,
+    String? uploadId,
+    String? workerId,
+    int? heartbeatMs,
+    int? retryCount,
+    String? idempotencyKey,
+    int? nativeMarkedCompleted,
+    int? serverCallbackCompleted,
   }) {
     return UploadQueueItem(
       id: id ?? this.id,
@@ -83,6 +114,13 @@ class UploadQueueItem {
       lastUpdated: lastUpdated ?? this.lastUpdated,
       uploadType: uploadType ?? this.uploadType,
       metadata: metadata ?? this.metadata,
+      uploadId: uploadId ?? this.uploadId,
+      workerId: workerId ?? this.workerId,
+      heartbeatMs: heartbeatMs ?? this.heartbeatMs,
+      retryCount: retryCount ?? this.retryCount,
+      idempotencyKey: idempotencyKey ?? this.idempotencyKey,
+      nativeMarkedCompleted: nativeMarkedCompleted ?? this.nativeMarkedCompleted,
+      serverCallbackCompleted: serverCallbackCompleted ?? this.serverCallbackCompleted,
     );
   }
 
@@ -102,6 +140,13 @@ class UploadQueueItem {
       'lastUpdated': lastUpdated,
       'uploadType': uploadType,
       'metadata': metadata,
+      'uploadId': uploadId,
+      'workerId': workerId,
+      'heartbeatMs': heartbeatMs,
+      'retryCount': retryCount,
+      'idempotencyKey': idempotencyKey,
+      'nativeMarkedCompleted': nativeMarkedCompleted,
+      'serverCallbackCompleted': serverCallbackCompleted,
     };
   }
 
@@ -121,6 +166,13 @@ class UploadQueueItem {
       lastUpdated: map['lastUpdated'] as String?,
       uploadType: map['uploadType'] as String? ?? 'video_post',
       metadata: map['metadata'] as String?,
+      uploadId: map['uploadId'] as String?,
+      workerId: map['workerId'] as String?,
+      heartbeatMs: map['heartbeatMs'] as int?,
+      retryCount: map['retryCount'] as int? ?? 0,
+      idempotencyKey: map['idempotencyKey'] as String?,
+      nativeMarkedCompleted: map['nativeMarkedCompleted'] as int? ?? 0,
+      serverCallbackCompleted: map['serverCallbackCompleted'] as int? ?? 0,
     );
   }
 }
@@ -140,7 +192,7 @@ class UploadQueueRepository {
     AppLogger.i('UploadQueueRepository: opening database at $path');
     return openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE upload_queue (
@@ -157,11 +209,21 @@ class UploadQueueRepository {
             createdAt TEXT NOT NULL,
             lastUpdated TEXT NOT NULL,
             uploadType TEXT NOT NULL DEFAULT 'video_post',
-            metadata TEXT
+            metadata TEXT,
+            uploadId TEXT,
+            workerId TEXT,
+            heartbeatMs INTEGER,
+            retryCount INTEGER NOT NULL DEFAULT 0,
+            idempotencyKey TEXT,
+            nativeMarkedCompleted INTEGER NOT NULL DEFAULT 0,
+            serverCallbackCompleted INTEGER NOT NULL DEFAULT 0
           )
         ''');
         await db.execute(
           'CREATE INDEX idx_upload_queue_status ON upload_queue(status)',
+        );
+        await db.execute(
+          'CREATE INDEX idx_upload_queue_uploadId ON upload_queue(uploadId)',
         );
       },
       onUpgrade: (db, oldVersion, newVersion) async {
@@ -182,7 +244,6 @@ class UploadQueueRepository {
           await db.execute(
             "ALTER TABLE upload_queue ADD COLUMN lastUpdated TEXT NOT NULL DEFAULT ''",
           );
-          // Backfill lastUpdated with createdAt for existing rows
           await db.rawUpdate(
             "UPDATE upload_queue SET lastUpdated = createdAt WHERE lastUpdated = ''",
           );
@@ -199,17 +260,153 @@ class UploadQueueRepository {
             'UploadQueueRepository: migrated to v4 — ensured index',
           );
         }
+        // v5: Added uploadId, workerId, heartbeatMs, retryCount, idempotencyKey, nativeMarkedCompleted, serverCallbackCompleted
+        if (oldVersion < 5) {
+          await db.execute(
+            "ALTER TABLE upload_queue ADD COLUMN uploadId TEXT",
+          );
+          await db.execute(
+            "ALTER TABLE upload_queue ADD COLUMN workerId TEXT",
+          );
+          await db.execute(
+            "ALTER TABLE upload_queue ADD COLUMN heartbeatMs INTEGER",
+          );
+          await db.execute(
+            "ALTER TABLE upload_queue ADD COLUMN retryCount INTEGER NOT NULL DEFAULT 0",
+          );
+          await db.execute(
+            "ALTER TABLE upload_queue ADD COLUMN idempotencyKey TEXT",
+          );
+          await db.execute(
+            "ALTER TABLE upload_queue ADD COLUMN nativeMarkedCompleted INTEGER NOT NULL DEFAULT 0",
+          );
+          await db.execute(
+            "ALTER TABLE upload_queue ADD COLUMN serverCallbackCompleted INTEGER NOT NULL DEFAULT 0",
+          );
+          // Backfill uploadId for existing rows
+          await db.execute(
+            "UPDATE upload_queue SET uploadId = 'legacy_' || id WHERE uploadId IS NULL",
+          );
+          await db.execute(
+            'CREATE INDEX IF NOT EXISTS idx_upload_queue_uploadId ON upload_queue(uploadId)',
+          );
+          AppLogger.i(
+            'UploadQueueRepository: migrated to v5 — added uploadId, workerId, heartbeatMs, retryCount, idempotencyKey, nativeMarkedCompleted, serverCallbackCompleted',
+          );
+        }
+      },
+      onConfigure: (db) async {
+        await db.rawQuery('PRAGMA journal_mode=WAL');
+        await db.rawQuery('PRAGMA busy_timeout=5000');
       },
     );
   }
 
-  static Future<int> insert(UploadQueueItem item) async {
+  /// Returns a map with {id, uploadId}.
+  static Future<Map<String, dynamic>> insert(UploadQueueItem item) async {
     final db = await database;
-    final id = await db.insert('upload_queue', item.toMap());
+    final uploadId = item.uploadId ?? _generateUploadId();
+    final map = item.copyWith(uploadId: uploadId).toMap();
+    final id = await db.insert('upload_queue', map);
     AppLogger.i(
-      'UploadQueueRepository: inserted item id=$id, type=${item.uploadType}, title=${item.title}',
+      'UploadQueueRepository: inserted item id=$id, uploadId=$uploadId, type=${item.uploadType}, title=${item.title}',
     );
-    return id;
+    return {'id': id, 'uploadId': uploadId};
+  }
+
+  static Future<UploadQueueItem?> getByUploadId(String uploadId) async {
+    final db = await database;
+    final maps = await db.query(
+      'upload_queue',
+      where: 'uploadId = ?',
+      whereArgs: [uploadId],
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    return UploadQueueItem.fromMap(maps.first);
+  }
+
+  static Future<List<UploadQueueItem>> getByFileType({
+    required String filePath,
+    String? uploadType,
+  }) async {
+    final db = await database;
+    if (uploadType != null) {
+      final maps = await db.query(
+        'upload_queue',
+        where: 'filePath = ? AND uploadType = ?',
+        whereArgs: [filePath, uploadType],
+        orderBy: 'id DESC',
+      );
+      return maps.map((m) => UploadQueueItem.fromMap(m)).toList();
+    }
+    final maps = await db.query(
+      'upload_queue',
+      where: 'filePath = ?',
+      whereArgs: [filePath],
+      orderBy: 'id DESC',
+    );
+    return maps.map((m) => UploadQueueItem.fromMap(m)).toList();
+  }
+
+  static Future<void> updateHeartbeat(int id) async {
+    final db = await database;
+    await db.update(
+      'upload_queue',
+      {
+        'heartbeatMs': DateTime.now().millisecondsSinceEpoch,
+        'lastUpdated': DateTime.now().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  static Future<void> markNativeCompleted(int id) async {
+    final db = await database;
+    await db.update(
+      'upload_queue',
+      {
+        'nativeMarkedCompleted': 1,
+        'lastUpdated': DateTime.now().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  static Future<void> markCallbackCompleted(int id) async {
+    final db = await database;
+    await db.update(
+      'upload_queue',
+      {
+        'serverCallbackCompleted': 1,
+        'lastUpdated': DateTime.now().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// Only allow valid state transitions.
+  /// Throws if the transition is invalid.
+  static Future<void> _assertValidTransition(Database db, int id, String newStatus) async {
+    final maps = await db.query(
+      'upload_queue',
+      columns: ['status'],
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (maps.isEmpty) return;
+    final current = maps.first['status'] as String;
+    if (current == 'completed' && newStatus != 'completed') {
+      throw StateError('Cannot transition from completed to $newStatus');
+    }
+    if (current == 'cancelled' && newStatus != 'cancelled') {
+      throw StateError('Cannot transition from cancelled to $newStatus');
+    }
+    if (current == newStatus) return;
   }
 
   static Future<UploadQueueItem?> getNextPending() async {
@@ -305,11 +502,13 @@ class UploadQueueRepository {
 
   static Future<void> markCompleted(int id) async {
     final db = await database;
+    await _assertValidTransition(db, id, 'completed');
     await db.update(
       'upload_queue',
       {
         'status': 'completed',
         'bytesUploaded': 0,
+        'nativeMarkedCompleted': 1,
         'lastUpdated': DateTime.now().toIso8601String(),
       },
       where: 'id = ?',
@@ -319,6 +518,7 @@ class UploadQueueRepository {
 
   static Future<void> markFailed(int id, String error) async {
     final db = await database;
+    await _assertValidTransition(db, id, 'failed');
     await db.update(
       'upload_queue',
       {
@@ -331,6 +531,14 @@ class UploadQueueRepository {
     );
   }
 
+  static Future<void> incrementRetryCount(int id) async {
+    final db = await database;
+    await db.rawUpdate(
+      'UPDATE upload_queue SET retryCount = retryCount + 1, lastUpdated = ? WHERE id = ?',
+      [DateTime.now().toIso8601String(), id],
+    );
+  }
+
   static Future<void> updateStatus({
     required int id,
     required String status,
@@ -338,6 +546,7 @@ class UploadQueueRepository {
     String? errorMessage,
   }) async {
     final db = await database;
+    await _assertValidTransition(db, id, status);
     final values = <String, dynamic>{
       'status': status,
       'lastUpdated': DateTime.now().toIso8601String(),
@@ -375,17 +584,30 @@ class UploadQueueRepository {
     return (result.first['cnt'] as int?) ?? 0;
   }
 
-  static Future<void> resetStaleUploading(
-      {Duration olderThan = const Duration(minutes: 30)}) async {
+  /// Resets items stuck in 'uploading' based on heartbeat staleness.
+  /// If a heartbeatMs is present but older than [heartbeatTimeout], the item
+  /// is considered stale (native process died). Without heartbeat, falls
+  /// back to lastUpdated timestamp with [fallbackTimeout].
+  static Future<void> resetStaleUploading({
+    Duration heartbeatTimeout = const Duration(minutes: 2),
+    Duration fallbackTimeout = const Duration(minutes: 5),
+  }) async {
     final db = await database;
-    final cutoff =
-        DateTime.now().subtract(olderThan).toIso8601String();
-    await db.update(
-      'upload_queue',
-      {'status': 'pending', 'uploadUrl': null, 'fileUrl': null},
-      where: "status = 'uploading' AND lastUpdated < ?",
-      whereArgs: [cutoff],
-    );
+    final now = DateTime.now();
+    final heartbeatCutoff = now.subtract(heartbeatTimeout).millisecondsSinceEpoch;
+    final fallbackCutoff = now.subtract(fallbackTimeout).toIso8601String();
+    await db.rawUpdate('''
+      UPDATE upload_queue
+      SET status = 'pending', uploadUrl = NULL, fileUrl = NULL,
+          errorMessage = 'Upload stalled — rescheduled',
+          lastUpdated = ?
+      WHERE status = 'uploading'
+      AND (
+        (heartbeatMs IS NOT NULL AND heartbeatMs < ?)
+        OR
+        (heartbeatMs IS NULL AND lastUpdated < ?)
+      )
+    ''', [now.toIso8601String(), heartbeatCutoff, fallbackCutoff]);
   }
 
   static Future<void> close() async {

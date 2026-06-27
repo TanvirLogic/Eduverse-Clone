@@ -77,6 +77,7 @@ class NativeUploadBridge {
     String? callbackBody,
     String? metadata,
     int itemId = -1,
+    String? uploadId,
   }) async {
     try {
       await _channel.invokeMethod('startNativeUpload', {
@@ -91,6 +92,7 @@ class NativeUploadBridge {
         'callbackBody': callbackBody,
         'metadata': metadata,
         'itemId': itemId,
+        'uploadId': uploadId,
       });
       return true;
     } catch (_) {
@@ -142,6 +144,56 @@ class NativeUploadBridge {
   static Future<void> processPendingQueue() async {
     try {
       await _channel.invokeMethod('processPendingQueue');
+    } catch (_) {}
+  }
+
+  /// Ping the native service to check if it's alive.
+  /// Returns true if the :upload process responds.
+  static Future<bool> ping() async {
+    try {
+      final result = await _channel.invokeMethod<bool>('ping');
+      return result ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Called by native when upload completes successfully.
+  static Future<void> onNativeUploadCompleted(int itemId, String fileUrl) async {
+    try {
+      await _channel.invokeMethod('onNativeUploadCompleted', {
+        'itemId': itemId,
+        'fileUrl': fileUrl,
+      });
+    } catch (_) {}
+  }
+
+  /// Called by native when upload fails.
+  static Future<void> onNativeUploadFailed(int itemId, String error) async {
+    try {
+      await _channel.invokeMethod('onNativeUploadFailed', {
+        'itemId': itemId,
+        'error': error,
+      });
+    } catch (_) {}
+  }
+
+  /// Get completed items manifest (items that finished while Flutter was away).
+  static Future<List<Map<String, dynamic>>> getCompletedItems() async {
+    try {
+      final result = await _channel.invokeMethod<String>('getNativeCompletedItems');
+      if (result == null) return [];
+      final list = jsonDecode(result) as List;
+      return list.cast<Map<String, dynamic>>();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Acknowledge completed items — deletes the manifest after Flutter processes it.
+  static Future<void> acknowledgeCompletedItems() async {
+    try {
+      await _channel.invokeMethod('acknowledgeCompletedItems');
     } catch (_) {}
   }
 

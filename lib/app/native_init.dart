@@ -5,7 +5,6 @@ import 'package:edtech/features/courses/data/repositories/upload_queue_repositor
 import 'package:edtech/global/core/services/logger_service.dart';
 import 'package:edtech/global/core/services/native_upload_bridge.dart';
 import 'package:edtech/global/core/services/upload_notification_service.dart';
-import 'package:edtech/global/core/services/upload_path_storage.dart';
 import 'package:media_kit/media_kit.dart';
 
 Future<void> initPlatformServices() async {
@@ -15,17 +14,24 @@ Future<void> initPlatformServices() async {
   await NativeUploadBridge.ensureInitialized();
   await _requestNotificationPermissionEarly();
 
-  // Phase 1: Recover from FlutterSecureStorage
-  await _recoverPendingUploads();
+  // Phase 1: Check if native service is alive via heartbeat.
+  // If alive, skip full recovery — the service is managing state.
+  final nativeAlive = await _checkNativeAlive();
+  if (nativeAlive) {
+    AppLogger.i('Recovery: native service is alive, skipping full recovery');
+    // Still reset stale locks to catch any edge cases
+    await _resetStaleLocks();
+    return;
+  }
 
-  // Phase 2: Recover from native JSON state — syncs completed/failed items
-  // back into SQLite so we don't re-upload what's already done.
-  await _recoverNativeOrphans();
+  // Phase 2: Recover from native state file (last known state before crash)
+  await _recoverFromNativeState();
 
-  // Phase 3: Clear stale locks so user can instantly restart
-  await _clearStaleLocks();
+  // Phase 3: Reset any remaining 'uploading' items to 'pending' immediately
+  // (no 30-min window needed since we checked heartbeat and native state)
+  await _resetStaleLocks();
 
-  // Phase 4: If there are still pending items in SQLite, auto-start the queue
+  // Phase 4: Auto-resume any pending items
   await _autoResumeIfNeeded();
 }
 
@@ -37,85 +43,84 @@ Future<void> _requestNotificationPermissionEarly() async {
   } catch (_) {}
 }
 
-/// Phase 1: Recover pending uploads from FlutterSecureStorage into SQLite.
-Future<void> _recoverPendingUploads() async {
+/// Check if the native :upload process is alive via ping.
+Future<bool> _checkNativeAlive() async {
   try {
-    await UploadNotificationService.cancel();
-    await UploadQueueRepository.resetStaleUploading();
-
-    final pendingPaths = await UploadPathStorage.getAllPendingPaths();
-    if (pendingPaths.isEmpty) return;
-
-    int recovered = 0;
-    for (final entry in pendingPaths) {
-      if (!entry.fileExists) {
-        await UploadPathStorage.removePath(entry.key);
-        continue;
-      }
-
-      final activeItems = await UploadQueueRepository.getActive();
-      final alreadyQueued = activeItems.any(
-        (item) => item.filePath == entry.filePath &&
-            item.status != 'completed' &&
-            item.status != 'failed',
-      );
-      if (alreadyQueued) {
-        await UploadPathStorage.removePath(entry.key);
-        continue;
-      }
-
-      final item = UploadQueueItem(
-        filePath: entry.filePath,
-        title: entry.title,
-        status: 'pending',
-        uploadType: entry.uploadType,
-        metadata: entry.metadata,
-      );
-      await UploadQueueRepository.insert(item);
-      await UploadPathStorage.removePath(entry.key);
-      recovered++;
-    }
-
-    if (recovered > 0) {
-      AppLogger.i('UploadRecovery: recovered $recovered pending upload(s) from FSS');
-    }
-  } catch (e) {
-    AppLogger.e('UploadRecovery: error during FSS recovery — $e');
+    return await NativeUploadBridge.ping();
+  } catch (_) {
+    return false;
   }
 }
 
-/// Phase 2: Recover from native JSON state file.
+/// Recover from native completion manifest and state file.
 ///
-/// When the native :upload process completes an item, it marks it 'completed'
-/// in native_uploads.json and then DELETES the file. So if the state file
-/// still exists, any 'completed' items in it were finished while we were away.
-///
-/// CRITICAL: We must mark these items as 'completed' in SQLite too, otherwise
-/// _clearStaleLocks will reset them to 'pending' after 30 minutes, and
-/// _autoResumeIfNeeded will re-upload them — causing duplicates on the server.
-Future<void> _recoverNativeOrphans() async {
+/// Only runs when native service is confirmed dead.
+/// Phase A: Read the completion manifest (items that finished while Flutter was away).
+/// Phase B: Read native_uploads.json for items still in progress.
+Future<void> _recoverFromNativeState() async {
   try {
-    final nativeItems = await NativeUploadBridge.getPendingUploads();
-    final hadNativeState = nativeItems.isNotEmpty;
+    // ── Phase A: Process completion manifest ──
+    // native_completed.json persists items that the :upload process finished.
+    // It survives state file cleanup and is only deleted after Flutter acknowledges.
+    int manifestCompleted = 0;
+    final completedItems = await NativeUploadBridge.getCompletedItems();
+    for (final entry in completedItems) {
+      final itemId = entry['id'] as int?;
+      if (itemId == null) continue;
+      // Check if the item still needs marking — avoid redundant operations
+      try {
+        final all = await UploadQueueRepository.getAll();
+        final dbItem = all.cast<UploadQueueItem?>().firstWhere(
+          (i) => i!.id == itemId,
+          orElse: () => null,
+        );
+        if (dbItem != null && dbItem.status != 'completed' && dbItem.status != 'failed') {
+          await UploadQueueRepository.markCompleted(itemId);
+          manifestCompleted++;
+        }
+      } catch (_) {}
+    }
+    if (manifestCompleted > 0) {
+      AppLogger.i('Recovery: marked $manifestCompleted item(s) completed from manifest');
+    }
+    // Acknowledge and delete the manifest regardless
+    await NativeUploadBridge.acknowledgeCompletedItems();
 
-    int recovered = 0;
+    // ── Phase B: Reconcile native_uploads.json ──
+    final nativeItems = await NativeUploadBridge.getPendingUploads();
+    if (nativeItems.isEmpty) {
+      // No active native items. Any 'uploading' items still in SQLite
+      // that weren't in the manifest are treated as stale — reset them.
+      final stillUploading = await UploadQueueRepository.getByStatus('uploading');
+      for (final item in stillUploading) {
+        if (item.status == 'completed' || item.status == 'failed') continue;
+        // If the item has fileUrl AND uploadUrl, it was likely uploaded
+        // but the manifest might have missed it. Mark completed to be safe.
+        if (item.fileUrl != null && item.fileUrl!.isNotEmpty &&
+            item.uploadUrl != null && item.uploadUrl!.isNotEmpty) {
+          await UploadQueueRepository.markCompleted(item.id!);
+          AppLogger.i('Recovery: item ${item.id} has URLs, marking completed');
+        }
+      }
+      return;
+    }
+
     int completed = 0;
     int failed = 0;
-    bool hasStillUploading = false;
+    int recovered = 0;
 
-    for (final item in nativeItems) {
-      final filePath = item['filePath'] as String?;
-      final title = item['title'] as String? ?? 'Upload';
-      final uploadType = item['uploadType'] as String? ?? 'video_post';
-      final metadata = item['metadata'] as String?;
-      final status = item['status'] as String? ?? 'pending';
-      final uploadUrl = item['uploadUrl'] as String?;
-      final fileUrl = item['fileUrl'] as String?;
-      final itemId = item['id'] as int?;
+    for (final native in nativeItems) {
+      final filePath = native['filePath'] as String?;
+      final status = native['status'] as String? ?? 'pending';
+      final itemId = native['id'] as int?;
+      final uploadUrl = native['uploadUrl'] as String?;
+      final fileUrl = native['fileUrl'] as String?;
+      final title = native['title'] as String? ?? 'Upload';
+      final uploadType = native['uploadType'] as String? ?? 'video_post';
+      final metadata = native['metadata'] as String?;
 
       if (filePath == null) continue;
 
-      // Native says completed → mark SQLite item as completed (prevents re-upload)
       if (status == 'completed') {
         if (itemId != null) {
           await UploadQueueRepository.markCompleted(itemId);
@@ -126,38 +131,33 @@ Future<void> _recoverNativeOrphans() async {
         continue;
       }
 
-      // Native says failed → mark SQLite item as failed
       if (status == 'failed') {
+        final errorMsg = native['errorMessage'] as String? ?? 'Upload failed (native)';
         if (itemId != null) {
-          await UploadQueueRepository.markFailed(
-              itemId, 'Native: ${item['errorMessage'] ?? 'Upload failed'}');
+          await UploadQueueRepository.markFailed(itemId, errorMsg);
         } else {
-          await _markItemFailedInQueue(
-              filePath, 'Native: ${item['errorMessage'] ?? 'Upload failed'}');
+          await _markItemFailedInQueue(filePath, errorMsg);
         }
         failed++;
         continue;
       }
 
-      // Track if any items are still actively uploading
-      if (status == 'uploading') {
-        hasStillUploading = true;
+      // For pending/uploading items, check if the file still exists
+      final file = Uri.tryParse(filePath)?.path ?? filePath;
+      if (!File(file).existsSync()) {
+        if (itemId != null) {
+          await UploadQueueRepository.markFailed(itemId, 'File not found after restart');
+        }
+        continue;
       }
 
-      // If it's still pending/uploading, check if file exists
-      final file = Uri.tryParse(filePath)?.path ?? filePath;
-      if (!File(file).existsSync()) continue;
-
-      // Check if it's already in the SQLite queue (any active status)
+      // Not on S3 and not failed — recover as pending
       final activeItems = await UploadQueueRepository.getActive();
       final alreadyQueued = activeItems.any(
-        (q) => q.filePath == filePath &&
-            q.status != 'completed' &&
-            q.status != 'failed',
+        (q) => q.filePath == filePath && q.status == 'pending',
       );
       if (alreadyQueued) continue;
 
-      // Recover as pending with uploadUrl and fileUrl if available
       final queueItem = UploadQueueItem(
         filePath: filePath,
         title: title,
@@ -171,74 +171,43 @@ Future<void> _recoverNativeOrphans() async {
       recovered++;
     }
 
-    // Only clear native state if nothing is still actively uploading.
-    if (!hasStillUploading) {
-      await NativeUploadBridge.clearState();
-
-      // If native state had no items (was already cleared by native's finally
-      // block after completing all uploads), any 'uploading' items left in
-      // SQLite with fileUrl set were completed successfully. Mark them
-      // 'completed' to prevent Phase 3 from resetting them to 'pending'
-      // and causing re-upload duplicates on next app start.
-      if (!hadNativeState) {
-        final stillUploading = await UploadQueueRepository.getByStatus('uploading');
-        for (final item in stillUploading) {
-          if (item.fileUrl != null && item.fileUrl!.isNotEmpty) {
-            await UploadQueueRepository.markCompleted(item.id!);
-          }
-        }
-      }
-    }
+    // Clear the native state file since we've reconciled
+    await NativeUploadBridge.clearState();
 
     if (recovered > 0) {
-      AppLogger.i('NativeRecovery: recovered $recovered orphaned upload(s) from native layer');
+      AppLogger.i('Recovery: recovered $recovered orphaned upload(s) from native layer');
     }
     if (completed > 0) {
-      AppLogger.i('NativeRecovery: $completed item(s) marked completed from native layer');
+      AppLogger.i('Recovery: $completed item(s) marked completed from native state');
     }
     if (failed > 0) {
-      AppLogger.i('NativeRecovery: $failed item(s) marked failed from native layer');
+      AppLogger.i('Recovery: $failed item(s) marked failed from native state');
     }
   } catch (e) {
-    AppLogger.e('NativeRecovery: error recovering native orphans — $e');
+    AppLogger.e('Recovery: error recovering from native state - $e');
   }
 }
 
-/// Phase 3: Clear stale locks so user can instantly restart.
-Future<void> _clearStaleLocks() async {
+/// Reset stale uploading items immediately (no 30-min window).
+Future<void> _resetStaleLocks() async {
   try {
     await UploadQueueRepository.resetStaleUploading(
-        olderThan: const Duration(minutes: 30));
+      heartbeatTimeout: const Duration(minutes: 2),
+      fallbackTimeout: const Duration(minutes: 5),
+    );
   } catch (e) {
-    AppLogger.e('StaleLockClear: error — $e');
+    AppLogger.e('Recovery: error resetting stale locks - $e');
   }
 }
 
-/// Checks native state first — if items already exist there, just restart the
-/// native service without overwriting. Only syncs from SQLite when native
-/// state is empty, to avoid interrupting mid-upload items or creating duplicates.
+/// Auto-resume pending items by syncing to native and starting the service.
 Future<void> _autoResumeIfNeeded() async {
   try {
-    final nativeItems = await NativeUploadBridge.getPendingUploads();
-    final hasNativeItems = nativeItems.isNotEmpty;
-
-    if (hasNativeItems) {
-      final hasActiveItems = nativeItems.any((n) {
-        final s = n['status'] as String? ?? '';
-        return s == 'pending' || s == 'uploading';
-      });
-      if (hasActiveItems) {
-        AppLogger.i('AutoResume: native state has ${nativeItems.length} active item(s), restarting service only');
-        await NativeUploadBridge.startQueueProcessing();
-        return;
-      }
-      // Native state has only completed/failed items — clear it and fall
-      // through to SQLite-based resume below.
-      await NativeUploadBridge.clearState();
-    }
-
     final pendingCount = await UploadQueueRepository.countPending();
-    if (pendingCount == 0) return;
+    if (pendingCount == 0) {
+      AppLogger.i('AutoResume: no pending items');
+      return;
+    }
 
     AppLogger.i('AutoResume: $pendingCount pending item(s) found, syncing from SQLite');
 
@@ -254,12 +223,18 @@ Future<void> _autoResumeIfNeeded() async {
       'contentType': _inferContentType(item.filePath),
       'uploadType': item.uploadType,
       'metadata': item.metadata,
+      'uploadId': item.uploadId,
     }).toList());
 
     await NativeUploadBridge.syncQueueToNative(nativeQueueJson);
-    await NativeUploadBridge.startQueueProcessing();
+    final started = await NativeUploadBridge.startQueueProcessing();
+    if (started) {
+      AppLogger.i('AutoResume: native service started with $pendingCount items');
+    } else {
+      AppLogger.w('AutoResume: failed to start native service');
+    }
   } catch (e) {
-    AppLogger.e('AutoResume: error — $e');
+    AppLogger.e('AutoResume: error - $e');
   }
 }
 
@@ -275,7 +250,7 @@ Future<void> _markItemCompletedInQueue(String filePath) async {
       }
     }
   } catch (e) {
-    AppLogger.e('MarkCompleted: error — $e');
+    AppLogger.e('MarkCompleted: error - $e');
   }
 }
 
@@ -291,7 +266,7 @@ Future<void> _markItemFailedInQueue(String filePath, String errorMessage) async 
       }
     }
   } catch (e) {
-    AppLogger.e('MarkFailed: error — $e');
+    AppLogger.e('MarkFailed: error - $e');
   }
 }
 

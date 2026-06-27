@@ -247,6 +247,18 @@ class BackgroundUploadService {
     return null;
   }
 
+  /// Verify a file exists at the given S3 URL via a HEAD request.
+  /// Used during recovery to prevent re-uploading already-completed files.
+  static Future<bool> verifyFileExists(String fileUrl) async {
+    try {
+      final request = http.Request('HEAD', Uri.parse(fileUrl));
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 15));
+      return streamedResponse.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Upload a file to S3 via presigned URL using HTTP PUT with streaming.
   /// Uses chunked streaming to avoid OOM on large files (3-4GB).
   static Future<bool> uploadFileToS3({

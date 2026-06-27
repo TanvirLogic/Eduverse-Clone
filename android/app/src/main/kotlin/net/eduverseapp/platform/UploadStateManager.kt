@@ -20,6 +20,7 @@ data class PendingUpload(
     val status: String = UploadConstants.STATUS_PENDING,
     val errorMessage: String? = null,
     val progress: Int = 0,
+    val uploadId: String? = null,
 )
 
 data class UploadState(
@@ -30,6 +31,7 @@ data class UploadState(
 
 object UploadStateManager {
     private const val FILE_NAME = "native_uploads.json"
+    private const val COMPLETED_FILE_NAME = "native_completed.json"
     private val lock = Any()
 
     fun getFile(context: Context): File =
@@ -55,6 +57,7 @@ object UploadStateManager {
                         put("status", item.status)
                         put("errorMessage", item.errorMessage ?: JSONObject.NULL)
                         put("progress", item.progress)
+                        put("uploadId", item.uploadId ?: JSONObject.NULL)
                     }
                     arr.put(obj)
                 }
@@ -99,6 +102,7 @@ object UploadStateManager {
                             status = obj.optString("status", UploadConstants.STATUS_PENDING),
                             errorMessage = obj.optString("errorMessage", null)?.takeIf { it != "null" },
                             progress = obj.optInt("progress", 0),
+                            uploadId = obj.optString("uploadId", null)?.takeIf { it != "null" },
                         )
                     )
                 }
@@ -159,6 +163,62 @@ object UploadStateManager {
                 if (index == -1) return
                 state.items[index] = state.items[index].copy(progress = progress)
                 save(context, state.items, state.activeIndex, isUploading = true)
+            } catch (_: Exception) {}
+        }
+    }
+
+    // ── Completed items manifest (survives state file cleanup) ──
+
+    /// Append a completed item to the persistent completion manifest.
+    /// This file survives `clear()` and is only deleted after Flutter
+    /// acknowledges the completions via `acknowledgeCompletedItems`.
+    fun saveCompletedItem(context: Context, itemId: Long, fileUrl: String?) {
+        synchronized(lock) {
+            try {
+                val existing = loadCompletedItems(context).toMutableList()
+                // Avoid duplicates — replace if same id already recorded
+                existing.removeAll { it.first == itemId }
+                existing.add(itemId to (fileUrl ?: ""))
+                val arr = JSONArray()
+                for ((id, url) in existing) {
+                    val obj = JSONObject().apply {
+                        put("id", id)
+                        put("fileUrl", url)
+                    }
+                    arr.put(obj)
+                }
+                val file = File(context.filesDir, COMPLETED_FILE_NAME)
+                file.parentFile?.mkdirs()
+                file.writeText(arr.toString(2))
+            } catch (_: Exception) {}
+        }
+    }
+
+    /// Load all completed items from the manifest.
+    /// Returns list of (itemId, fileUrl) pairs.
+    fun loadCompletedItems(context: Context): List<Pair<Long, String>> {
+        synchronized(lock) {
+            return try {
+                val file = File(context.filesDir, COMPLETED_FILE_NAME)
+                if (!file.exists()) return emptyList()
+                val content = file.readText()
+                if (content.isBlank()) return emptyList()
+                val arr = JSONArray(content)
+                (0 until arr.length()).map { i ->
+                    val obj = arr.getJSONObject(i)
+                    obj.getLong("id") to (obj.optString("fileUrl", "") ?: "")
+                }
+            } catch (_: Exception) {
+                emptyList()
+            }
+        }
+    }
+
+    /// Delete the completed items manifest — called after Flutter acknowledges.
+    fun clearCompletedItems(context: Context) {
+        synchronized(lock) {
+            try {
+                File(context.filesDir, COMPLETED_FILE_NAME).delete()
             } catch (_: Exception) {}
         }
     }

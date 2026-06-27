@@ -726,32 +726,22 @@ class ManageModuleProvider extends ChangeNotifier {
           }
         }
 
-        // Fix B: When native state is empty but we still have tracked items,
-        // check SQLite to clean up orphaned or already-completed entries
-        if (items.isEmpty && _pendingLessons.isNotEmpty) {
-          final allDbItems = await UploadQueueRepository.getAll();
-          final dbItemMap = {for (final item in allDbItems) item.id: item};
+        // Clean up items where SQLite status is terminal (completed/failed)
+        // but in-memory _pendingLessons still tracks them. This prevents stuck
+        // UI state when the polling detects native completion after a delay.
+        if (_pendingLessons.isNotEmpty) {
+          final allDb = await UploadQueueRepository.getAll();
+          final dbMap = {for (final item in allDb) item.id: item};
           final orphanedIds = <int>[];
-
           for (final entry in _pendingLessons.entries) {
-            final dbItem = dbItemMap[entry.key];
-            if (dbItem == null) {
-              // Item deleted from SQLite (already completed and cleared)
+            final dbItem = dbMap[entry.key];
+            if (dbItem == null || dbItem.status == 'completed' || dbItem.status == 'failed') {
               orphanedIds.add(entry.key);
-            } else if (dbItem.status == 'completed' ||
-                dbItem.status == 'failed') {
-              // SQLite status was updated separately
-              orphanedIds.add(entry.key);
-            } else if (dbItem.fileUrl != null && dbItem.fileUrl!.isNotEmpty) {
-              // Has fileUrl but native is done with it — upload completed
-              await UploadQueueRepository.markCompleted(entry.key);
-              orphanedIds.add(entry.key);
-              if (_notifiedCompletions.add(entry.key)) {
+              if (dbItem?.status == 'completed' && _notifiedCompletions.add(entry.key)) {
                 ToastService.showSuccess('Upload completed successfully');
               }
             }
           }
-
           for (final queueId in orphanedIds) {
             _pendingLessons.remove(queueId);
           }

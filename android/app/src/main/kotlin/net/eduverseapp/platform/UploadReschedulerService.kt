@@ -34,6 +34,7 @@ class UploadReschedulerService : Service() {
     private var wakeLock: PowerManager.WakeLock? = null
     private var wifiLock: WifiManager.WifiLock? = null
     private lateinit var notificationManager: NotificationManager
+    private var heartbeatExecutor: java.util.concurrent.ScheduledExecutorService? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -42,6 +43,8 @@ class UploadReschedulerService : Service() {
         notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel()
         acquireLocks()
+        writeAliveMarker()
+        startHeartbeat()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -101,8 +104,38 @@ class UploadReschedulerService : Service() {
     }
 
     override fun onDestroy() {
+        deleteAliveMarker()
+        stopHeartbeat()
         releaseLocks()
         super.onDestroy()
+    }
+
+    private fun startHeartbeat() {
+        heartbeatExecutor = java.util.concurrent.Executors.newSingleThreadScheduledExecutor()
+        heartbeatExecutor?.scheduleAtFixedRate({
+            // The ping() check from Flutter serves as the heartbeat.
+            // Just being alive means we respond.
+        }, 15, 30, java.util.concurrent.TimeUnit.SECONDS)
+    }
+
+    private fun stopHeartbeat() {
+        heartbeatExecutor?.shutdownNow()
+        heartbeatExecutor = null
+    }
+
+    private val aliveMarker: java.io.File
+        get() = java.io.File(filesDir, ALIVE_MARKER_FILE)
+
+    private fun writeAliveMarker() {
+        try {
+            aliveMarker.writeText("alive")
+        } catch (_: Exception) {}
+    }
+
+    private fun deleteAliveMarker() {
+        try {
+            aliveMarker.delete()
+        } catch (_: Exception) {}
     }
 
     private fun startForegroundSafe(text: String, progress: Int, indeterminate: Boolean): Boolean {
@@ -372,7 +405,7 @@ class UploadReschedulerService : Service() {
                         // Report progress on first chunk + every 1% thereafter
                         // The first-chunk report ensures small files show some progress
                         val shouldReport = lastReportedProgress < 0 ||
-                            progress >= lastReportedProgress + 1
+                            progress >= lastReportedProgress + 5
                         if (shouldReport) {
                             lastReportedProgress = progress
                             if (itemId >= 0) {
@@ -413,6 +446,7 @@ class UploadReschedulerService : Service() {
 
     private fun performServerCallback(item: PendingUpload): Boolean {
         val maxRetries = 3
+        val idempotencyKey = "${item.uploadId ?: item.id}_callback"
         for (attempt in 1..maxRetries) {
             var connection: HttpURLConnection? = null
             try {
@@ -421,6 +455,7 @@ class UploadReschedulerService : Service() {
                 connection.requestMethod = "POST"
                 connection.setRequestProperty("Content-Type", "application/json")
                 connection.setRequestProperty("Authorization", "Bearer ${item.authToken}")
+                connection.setRequestProperty("Idempotency-Key", idempotencyKey)
                 connection.doOutput = true
                 connection.useCaches = false
                 connection.connectTimeout = 30000
@@ -436,6 +471,9 @@ class UploadReschedulerService : Service() {
                 if (responseCode in 200..299) {
                     return true
                 }
+
+                // 409 Conflict means idempotency key already processed
+                if (responseCode == 409) return true
 
                 if (responseCode == 401) return false
 
@@ -460,8 +498,10 @@ class UploadReschedulerService : Service() {
         return null
     }
 
-    private fun markItemCompleted(item: PendingUpload) {
+        private fun markItemCompleted(item: PendingUpload) {
         UploadStateManager.markItemStatus(this, item.id, UploadConstants.STATUS_COMPLETED)
+        // Persist to completion manifest so recovery can find it after state file is cleared
+        UploadStateManager.saveCompletedItem(this, item.id, item.fileUrl)
     }
 
     private fun markItemFailed(item: PendingUpload, error: String) {
@@ -595,6 +635,7 @@ class UploadReschedulerService : Service() {
     }
 
     companion object {
+        const val ALIVE_MARKER_FILE = "upload_service_alive.marker"
         const val CHANNEL_ID = "eduverse_upload_service"
         const val COMPLETION_CHANNEL_ID = "eduverse_upload_complete"
         const val NOTIFICATION_ID = 1001
