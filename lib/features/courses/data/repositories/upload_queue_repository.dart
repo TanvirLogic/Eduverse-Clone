@@ -550,6 +550,33 @@ class UploadQueueRepository {
     );
   }
 
+  static Future<void> updateWorkerId({
+    required int id,
+    required String workerId,
+  }) async {
+    final db = await database;
+    await db.update(
+      'upload_queue',
+      {
+        'workerId': workerId,
+        'lastUpdated': DateTime.now().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  static Future<List<UploadQueueItem>> getByWorkerId(
+      String workerId) async {
+    final db = await database;
+    final maps = await db.query(
+      'upload_queue',
+      where: 'workerId = ?',
+      whereArgs: [workerId],
+    );
+    return maps.map((m) => UploadQueueItem.fromMap(m)).toList();
+  }
+
   static Future<void> updateStatus({
     required int id,
     required String status,
@@ -630,8 +657,9 @@ class UploadQueueRepository {
     final fallbackCutoff = now.subtract(fallbackTimeout).toIso8601String();
     await db.rawUpdate('''
       UPDATE upload_queue
-      SET status = 'pending', uploadUrl = NULL, fileUrl = NULL,
-          errorMessage = 'Upload stalled — rescheduled',
+      SET status = 'pending',
+          workerId = NULL,
+          errorMessage = NULL,
           lastUpdated = ?
       WHERE status = 'uploading'
       AND (

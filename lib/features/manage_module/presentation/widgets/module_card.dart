@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
 import 'package:edtech/global/core/constants/images/images.dart';
 import 'package:edtech/app/app_colors.dart';
 import 'package:edtech/global/core/widgets/swipe_action_widget.dart';
 import 'package:edtech/global/core/widgets/app_alert_dialog.dart';
+import 'package:edtech/features/courses/providers/unified_upload_queue_provider.dart';
 import 'package:edtech/features/manage_module/data/manage_module_models.dart';
 class ModuleCard extends StatelessWidget {
   final CourseModule module;
@@ -23,7 +25,6 @@ class ModuleCard extends StatelessWidget {
   final void Function(String fileUrl, String title) onTapResource;
   final List<PendingLesson> pendingLessons;
   final Future<void> Function(int queueId) onDeletePendingLesson;
-  final Future<void> Function(int queueId) onRetryPendingLesson;
 
   final ValueNotifier<int>? resetNotifier;
 
@@ -46,7 +47,6 @@ class ModuleCard extends StatelessWidget {
     required this.onTapResource,
     this.pendingLessons = const [],
     required this.onDeletePendingLesson,
-    required this.onRetryPendingLesson,
     this.resetNotifier,
   });
 
@@ -179,7 +179,6 @@ class ModuleCard extends StatelessWidget {
                         isDark: isDark,
                         isEditing: isEditing,
                         onDelete: () => onDeletePendingLesson(pending.queueId),
-                        onRetry: () => onRetryPendingLesson(pending.queueId),
                       ),
                     )),
                   ],
@@ -198,21 +197,28 @@ class _PendingLessonRow extends StatelessWidget {
   final bool isDark;
   final bool isEditing;
   final VoidCallback onDelete;
-  final VoidCallback? onRetry;
 
   const _PendingLessonRow({
     required this.pending,
     required this.isDark,
     required this.isEditing,
     required this.onDelete,
-    this.onRetry,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isUploading = pending.uploadStatus == 'uploading';
-    final progress = pending.uploadProgress;
+
+    // Read live progress from the queue provider if this item is
+    // the currently active upload — gives real-time percentage
+    // instead of waiting for the 5s polling cycle.
+    final queueProvider = context.watch<UnifiedUploadQueueProvider>();
+    final isActiveUpload = queueProvider.activeItem?.id == pending.queueId;
+    final liveProgress = isActiveUpload
+        ? queueProvider.activeProgress / 100.0
+        : pending.uploadProgress;
+    final isUploading = isActiveUpload || pending.uploadStatus == 'uploading';
+    final progress = isUploading ? liveProgress : pending.uploadProgress;
 
     return Material(
       color: Colors.transparent,
@@ -268,14 +274,6 @@ class _PendingLessonRow extends StatelessWidget {
                     padding: const EdgeInsets.only(left: 4),
                     child: Icon(Icons.error_outline, size: 16, color: Colors.red.shade400),
                   ),
-                if (pending.uploadStatus == 'failed' && onRetry != null)
-                  GestureDetector(
-                    onTap: onRetry,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 4),
-                      child: Icon(Icons.refresh, size: 16, color: cs.primary),
-                    ),
-                  ),
                 if (isEditing)
                   GestureDetector(
                     onTap: onDelete,
@@ -324,18 +322,6 @@ class _PendingLessonRow extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (pending.uploadStatus == 'failed' && onRetry != null)
-                        GestureDetector(
-                          onTap: onRetry,
-                          child: Text(
-                            ' Retry',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: cs.primary,
-                            ),
-                          ),
-                        ),
                     ],
                   ),
                 ],

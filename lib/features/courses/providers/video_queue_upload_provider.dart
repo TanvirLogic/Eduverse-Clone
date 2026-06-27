@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:edtech/features/courses/data/helpers/video_metadata_helper.dart';
 import 'package:edtech/features/courses/data/repositories/upload_queue_repository.dart';
-import 'package:edtech/features/courses/services/background_upload_service.dart';
 import 'package:edtech/global/core/services/toast_service.dart';
 import 'package:flutter/material.dart';
 
@@ -101,7 +100,6 @@ class VideoQueueUploadProvider extends ChangeNotifier {
   }
 
   Future<void> resumeQueue() async {
-    await BackgroundUploadService.startNativeProcessing();
     _isPaused = false;
     _isBackgroundRunning = true;
     notifyListeners();

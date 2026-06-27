@@ -207,12 +207,6 @@ class _ManageModuleBodyState extends State<_ManageModuleBody> {
                                       provider.pendingLessonsForModule,
                                   onDeletePendingLesson:
                                       provider.deletePendingLesson,
-                                  onRetryPendingLesson: (queueId) =>
-                                      provider.retryPendingLesson(
-                                        queueId,
-                                        queueProvider: context
-                                            .read<UnifiedUploadQueueProvider>(),
-                                      ),
                                   onAddVideo: (index) =>
                                       ManageModuleAddLessonSheet.show(
                                         context,

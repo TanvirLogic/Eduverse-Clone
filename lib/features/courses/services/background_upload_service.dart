@@ -4,8 +4,6 @@ import 'dart:io';
 import 'package:edtech/app/urls.dart';
 import 'package:edtech/features/auth/data/models/auth_controller.dart';
 import 'package:edtech/global/core/services/logger_service.dart';
-import 'package:edtech/global/core/services/native_upload_bridge.dart';
-import 'package:edtech/global/core/services/upload_path_storage.dart';
 import 'package:http/http.dart' as http;
 
 class BackgroundUploadService {
@@ -74,63 +72,6 @@ class BackgroundUploadService {
     }
     AppLogger.e('fetchPresignedUrl: failed after $maxRetries retries');
     return null;
-  }
-
-  /// Sync the full SQLite queue to the native state file and start the
-  /// native :upload process. Each item should already have its presigned URL.
-  static Future<bool> syncAndStartNative() async {
-    try {
-      final itemsJson = await UploadPathStorage.getAtomicQueueJson();
-      if (itemsJson == '[]') return true;
-
-      await NativeUploadBridge.syncQueueToNative(itemsJson);
-      await NativeUploadBridge.startQueueProcessing();
-      AppLogger.i('BackgroundUploadService: synced and started native queue');
-      return true;
-    } catch (e) {
-      AppLogger.e('BackgroundUploadService: syncAndStartNative error — $e');
-      return false;
-    }
-  }
-
-  /// Sync a single item with a presigned URL to the native layer.
-  /// Returns true if the item was saved successfully.
-  static Future<bool> syncItemToNative({
-    required String filePath,
-    required String uploadUrl,
-    String? fileUrl,
-    required String title,
-    String contentType = 'video/mp4',
-    String uploadType = 'video_post',
-    String? authToken,
-    String? callbackUrl,
-    String? callbackBody,
-    String? metadata,
-    int itemId = -1,
-  }) async {
-    return NativeUploadBridge.startNativeUpload(
-      filePath: filePath,
-      uploadUrl: uploadUrl,
-      fileUrl: fileUrl,
-      title: title,
-      contentType: contentType,
-      uploadType: uploadType,
-      authToken: authToken,
-      callbackUrl: callbackUrl,
-      callbackBody: callbackBody,
-      metadata: metadata,
-      itemId: itemId,
-    );
-  }
-
-  /// Start the native :upload process with the persisted queue.
-  static Future<bool> startNativeProcessing() async {
-    try {
-      await NativeUploadBridge.startQueueProcessing();
-      return true;
-    } catch (_) {
-      return false;
-    }
   }
 
   static String inferVideoContentType(String filename) {

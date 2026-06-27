@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:background_downloader/background_downloader.dart';
 import 'package:edtech/features/courses/data/models/upload_task.dart';
 import 'package:edtech/features/courses/data/repositories/upload_queue_repository.dart';
 import 'package:edtech/features/courses/providers/unified_upload_queue_provider.dart';
@@ -10,7 +11,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:edtech/app/urls.dart';
 import 'package:edtech/app/setup_network_caller.dart';
 import 'package:edtech/global/core/services/logger_service.dart';
-import 'package:edtech/global/core/services/native_upload_bridge.dart';
 import 'package:edtech/global/core/services/toast_service.dart';
 
 class ManageModuleProvider extends ChangeNotifier {
@@ -214,17 +214,11 @@ class ManageModuleProvider extends ChangeNotifier {
                 i.uploadType == 'module_lesson' || i.uploadType == 'resource',
           )
           .toList();
-      if (lessonItems.isEmpty) return;
-
-      // Check what native is currently processing to avoid restoring
-      // items that completed while the provider was away.
-      final nativeState = await NativeUploadBridge.getQueueItems();
-      final nativeIds =
-          (nativeState['items'] as List<dynamic>?)
-              ?.map((e) => (e as Map)['id'] as int?)
-              .whereType<int>()
-              .toSet() ??
-          {};
+      if (lessonItems.isEmpty) {
+        AppLogger.i('_restorePendingUploads: no active lesson items found');
+        return;
+      }
+      AppLogger.i('_restorePendingUploads: found ${lessonItems.length} item(s) to restore');
 
       bool hasUpdates = false;
 
@@ -272,36 +266,44 @@ class ManageModuleProvider extends ChangeNotifier {
           continue;
         }
 
-        // If native isn't processing this item and it has a fileUrl,
-        // the upload completed but the server lesson may not exist yet.
-        // Mark SQLite as completed to prevent re-upload on next restart.
-        if (!nativeIds.contains(item.id) &&
-            item.fileUrl != null &&
-            item.fileUrl!.isNotEmpty) {
-          await UploadQueueRepository.markCompleted(item.id!);
-          AppLogger.i(
-            '_restorePendingUploads: marking "${meta.lessonTitle}" completed — fileUrl present, native inactive',
-          );
-          continue;
-        }
-
         final isResource = item.uploadType == 'resource';
+
+        // Try to get real-time progress from background_downloader's database
+        double restoredProgress = item.fileSize > 0
+            ? (item.bytesUploaded / item.fileSize)
+            : 0.0;
+        if (item.workerId != null && item.workerId!.isNotEmpty) {
+          try {
+            final record = await FileDownloader()
+                .database
+                .recordForId(item.workerId!);
+            if (record != null && record.progress > restoredProgress) {
+              restoredProgress = record.progress;
+              // Sync to our SQLite
+              if (item.fileSize > 0) {
+                await UploadQueueRepository.updateProgress(
+                  id: item.id!,
+                  bytesUploaded: (record.progress * item.fileSize).round(),
+                );
+              }
+            }
+          } catch (_) {}
+        }
         AppLogger.i(
-          '_restorePendingUploads: restoring ${isResource ? "resource" : "lesson"} "${meta.lessonTitle}"',
+          '_restorePendingUploads: restoring ${isResource ? "resource" : "lesson"} "${meta.lessonTitle}" status=${item.status} progress=${restoredProgress.toStringAsFixed(2)}',
         );
 
         final lessonId = restoredLessonId ?? _nextLessonId++;
         if (restoredLessonId != null && restoredLessonId >= _nextLessonId) {
           _nextLessonId = lessonId + 1;
         }
-
         final pending = PendingLesson(
           queueId: item.id!,
           lessonId: lessonId,
           title: meta.lessonTitle,
           type: isResource ? LessonType.resource : LessonType.video,
           filePath: item.filePath,
-          uploadProgress: 0.0,
+          uploadProgress: restoredProgress,
           uploadStatus: item.status,
           fileUrl: item.fileUrl,
           moduleId: meta.moduleId,
@@ -312,7 +314,7 @@ class ManageModuleProvider extends ChangeNotifier {
       }
 
       if (hasUpdates) {
-        if (_progressTimer == null) _startProgressPolling();
+        _startProgressPolling();
         notifyListeners();
       }
     } catch (e) {
@@ -669,90 +671,102 @@ class ManageModuleProvider extends ChangeNotifier {
 
   void _startProgressPolling() {
     _progressTimer?.cancel();
-    _progressTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
-      try {
-        final data = await NativeUploadBridge.getQueueItems();
-        final items = data['items'] as List<dynamic>? ?? [];
-        bool updated = false;
-        final completedIds = <int>[];
+    _pollProgress();  // Run immediately for instant UI update
+    _progressTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _pollProgress();
+    });
+  }
 
-        for (final raw in items) {
-          final item = raw as Map<String, dynamic>;
-          final queueId = item['id'] as int;
-          final pending = _pendingLessons[queueId];
-          if (pending == null) continue;
+  Future<void> _pollProgress() async {
+    try {
+      final allDb = await UploadQueueRepository.getAll();
+      final dbMap = {for (final item in allDb) item.id: item};
+      bool updated = false;
+      final completedIds = <int>[];
 
-          final status = item['status'] as String? ?? 'pending';
-          final progress =
-              ((item['progress'] as num?)?.toDouble() ?? 0.0) / 100.0;
+      for (final entry in _pendingLessons.entries) {
+        final queueId = entry.key;
+        final pending = entry.value;
+        final dbItem = dbMap[queueId];
+
+        if (dbItem == null) {
+          completedIds.add(queueId);
+          continue;
+        }
+
+          final status = dbItem.status;
+          var progress = dbItem.fileSize > 0
+              ? (dbItem.bytesUploaded / dbItem.fileSize)
+              : 0.0;
+
+          // If the item has a workerId, try background_downloader's DB for
+          // real progress — this works even if Dart callbacks aren't firing.
+          if (dbItem.workerId != null && dbItem.workerId!.isNotEmpty) {
+            try {
+              final record = await FileDownloader()
+                  .database
+                  .recordForId(dbItem.workerId!);
+              if (record != null && record.progress > progress) {
+                progress = record.progress;
+                if (dbItem.fileSize > 0) {
+                  await UploadQueueRepository.updateProgress(
+                    id: queueId,
+                    bytesUploaded: (record.progress * dbItem.fileSize).round(),
+                  );
+                }
+              }
+            } catch (_) {}
+          }
 
           if (pending.uploadStatus != status ||
               pending.uploadProgress != progress) {
+            AppLogger.i('_pollProgress: queueId=$queueId status=$status progress=${progress.toStringAsFixed(2)}');
             pending.uploadStatus = status;
             pending.uploadProgress = progress;
             updated = true;
           }
 
-          final fileUrl = item['fileUrl'] as String?;
-          if (fileUrl != null && fileUrl.isNotEmpty) {
-            pending.fileUrl = fileUrl;
+        if (dbItem.fileUrl != null && dbItem.fileUrl!.isNotEmpty) {
+          pending.fileUrl = dbItem.fileUrl;
+        }
+
+        if (status == 'completed') {
+          pending.uploadStatus = 'completed';
+          pending.uploadProgress = 1.0;
+          updated = true;
+          completedIds.add(queueId);
+          if (_notifiedCompletions.add(queueId)) {
+            ToastService.showSuccess('Upload completed successfully');
           }
-
-          if (status == 'completed') {
-            if (fileUrl != null && fileUrl.isNotEmpty) {
-              pending.fileUrl = fileUrl;
-            }
-            pending.uploadStatus = 'completed';
-            updated = true;
-            completedIds.add(queueId);
-            if (_notifiedCompletions.add(queueId)) {
-              ToastService.showSuccess('Upload completed successfully');
-            }
-          } else if (status == 'failed') {
-            pending.uploadStatus = 'failed';
-            pending.uploadProgress = 0.0;
-            updated = true;
-          }
+        } else if (status == 'failed') {
+          pending.uploadStatus = 'failed';
+          pending.uploadProgress = 0.0;
+          updated = true;
         }
-
-        // Remove completed items from in-memory state only.
-        // Failed items stay visible so the user can retry them.
-        if (_pendingLessons.isNotEmpty) {
-          final allDb = await UploadQueueRepository.getAll();
-          final dbMap = {for (final item in allDb) item.id: item};
-          for (final entry in _pendingLessons.entries) {
-            final dbItem = dbMap[entry.key];
-            if (dbItem?.status == 'completed') {
-              completedIds.add(entry.key);
-              if (_notifiedCompletions.add(entry.key)) {
-                ToastService.showSuccess('Upload completed successfully');
-              }
-            }
-          }
-        }
-        for (final queueId in completedIds) {
-          _pendingLessons.remove(queueId);
-        }
-
-        if (completedIds.isNotEmpty) {
-          await _silentRefresh();
-        }
-
-        if (updated) notifyListeners();
-
-        if (_pendingLessons.isEmpty) {
-          _progressTimer?.cancel();
-          _progressTimer = null;
-          if (completedIds.isNotEmpty) {
-            Future.delayed(const Duration(seconds: 10), () async {
-              await _silentRefresh();
-            });
-          }
-        }
-      } catch (e) {
-        AppLogger.e('_startProgressPolling error: $e');
       }
-    });
+
+      for (final queueId in completedIds) {
+        _pendingLessons.remove(queueId);
+      }
+
+      if (completedIds.isNotEmpty) {
+        await _silentRefresh();
+      }
+
+      if (updated) notifyListeners();
+
+      if (_pendingLessons.isEmpty) {
+        _progressTimer?.cancel();
+        _progressTimer = null;
+        if (completedIds.isNotEmpty) {
+          Future.delayed(const Duration(seconds: 10), () async {
+            await _silentRefresh();
+          });
+        }
+      }
+    } catch (e) {
+      AppLogger.e('_startProgressPolling error: $e');
+    }
   }
 
   /// Checks if a filePath is already in the queue (any status).

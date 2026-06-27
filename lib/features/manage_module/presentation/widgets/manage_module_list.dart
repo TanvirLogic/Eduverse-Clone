@@ -27,7 +27,6 @@ class ManageModuleList extends StatelessWidget {
   final void Function(String fileUrl, String title) onTapResource;
   final List<PendingLesson> Function(int moduleId) pendingLessonsForModule;
   final Future<void> Function(int queueId) onDeletePendingLesson;
-  final Future<void> Function(int queueId) onRetryPendingLesson;
 
   const ManageModuleList({
     super.key,
@@ -52,7 +51,6 @@ class ManageModuleList extends StatelessWidget {
     required this.onTapResource,
     required this.pendingLessonsForModule,
     required this.onDeletePendingLesson,
-    required this.onRetryPendingLesson,
   });
 
   @override
@@ -113,7 +111,6 @@ class ManageModuleList extends StatelessWidget {
                   isEditing: false,
                   pendingLessons: pendingLessonsForModule(module.id),
                   onDeletePendingLesson: onDeletePendingLesson,
-                  onRetryPendingLesson: onRetryPendingLesson,
                   onToggleExpand: () => onToggleExpand(module),
                   onRename: (newName) => onRename(module, newName),
                   onShowRenameDialog: onShowRenameDialog,
