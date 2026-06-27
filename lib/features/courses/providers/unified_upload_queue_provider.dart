@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:background_downloader/background_downloader.dart';
 import 'package:edtech/app/app.dart';
@@ -276,10 +277,14 @@ class UnifiedUploadQueueProvider extends ChangeNotifier {
     if (itemId == null) return;
 
     _progressUpdateCount++;
-    final pct = (update.progress * 100).round();
+
+    // background_downloader uses negative sentinel values for special
+    // states: -4.0 = waitingToRetry, -1.0 = failed, -2.0 = canceled, etc.
+    // Clamp to 0..100 so the UI never shows "-400%".
+    final pct = max(0, (update.progress * 100).round());
     AppLogger.i('_onNativeTaskProgress: item=$itemId progress=$pct%');
 
-    // Update in-memory state for immediate UI feedback
+    // Update in-memory state for immediate UI feedback.
     if (_activeItem?.id == itemId) {
       _activeProgress = pct;
       notifyListeners();
@@ -288,18 +293,20 @@ class UnifiedUploadQueueProvider extends ChangeNotifier {
     // Persist progress to SQLite so it survives app restart.
     // Throttle: only write when crossing a whole-percent boundary to
     // avoid thousands of writes during a multi-GB upload.
-    final items = await UploadQueueRepository.getAll();
-    final item = items.where((i) => i.id == itemId).firstOrNull;
-    if (item != null && item.fileSize > 0) {
-      final currentStoredPct = item.fileSize > 0
-          ? ((item.bytesUploaded / item.fileSize) * 100).round()
-          : 0;
-      if (pct != currentStoredPct) {
-        final bytes = (update.progress * item.fileSize).round();
-        await UploadQueueRepository.updateProgress(
-          id: itemId,
-          bytesUploaded: bytes,
-        );
+    if (update.progress >= 0) {
+      final items = await UploadQueueRepository.getAll();
+      final item = items.where((i) => i.id == itemId).firstOrNull;
+      if (item != null && item.fileSize > 0) {
+        final currentStoredPct = item.fileSize > 0
+            ? ((item.bytesUploaded / item.fileSize) * 100).round()
+            : 0;
+        if (pct != currentStoredPct) {
+          final bytes = (update.progress * item.fileSize).round();
+          await UploadQueueRepository.updateProgress(
+            id: itemId,
+            bytesUploaded: bytes,
+          );
+        }
       }
     }
 
