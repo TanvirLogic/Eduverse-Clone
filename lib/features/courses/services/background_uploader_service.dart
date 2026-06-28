@@ -33,6 +33,7 @@ class BackgroundUploaderService {
       metaData: metaData,
       retries: 10,
       updates: Updates.statusAndProgress,
+      group: 'upload_queue',
     );
 
     // Background_downloader already runs in foreground mode, and upload

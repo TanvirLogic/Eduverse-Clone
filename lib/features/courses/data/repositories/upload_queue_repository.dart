@@ -58,8 +58,8 @@ class UploadQueueItem {
     this.idempotencyKey,
     this.nativeMarkedCompleted = 0,
     this.serverCallbackCompleted = 0,
-  })  : createdAt = createdAt ?? DateTime.now().toIso8601String(),
-        lastUpdated = lastUpdated ?? DateTime.now().toIso8601String();
+  }) : createdAt = createdAt ?? DateTime.now().toIso8601String(),
+       lastUpdated = lastUpdated ?? DateTime.now().toIso8601String();
 
   UploadTaskType get taskType => UploadTaskType.fromDb(uploadType);
 
@@ -119,8 +119,10 @@ class UploadQueueItem {
       heartbeatMs: heartbeatMs ?? this.heartbeatMs,
       retryCount: retryCount ?? this.retryCount,
       idempotencyKey: idempotencyKey ?? this.idempotencyKey,
-      nativeMarkedCompleted: nativeMarkedCompleted ?? this.nativeMarkedCompleted,
-      serverCallbackCompleted: serverCallbackCompleted ?? this.serverCallbackCompleted,
+      nativeMarkedCompleted:
+          nativeMarkedCompleted ?? this.nativeMarkedCompleted,
+      serverCallbackCompleted:
+          serverCallbackCompleted ?? this.serverCallbackCompleted,
     );
   }
 
@@ -241,9 +243,7 @@ class UploadQueueRepository {
           await db.execute(
             "ALTER TABLE upload_queue ADD COLUMN uploadType TEXT NOT NULL DEFAULT 'video_post'",
           );
-          await db.execute(
-            "ALTER TABLE upload_queue ADD COLUMN metadata TEXT",
-          );
+          await db.execute("ALTER TABLE upload_queue ADD COLUMN metadata TEXT");
           AppLogger.i(
             'UploadQueueRepository: migrated to v2 — added uploadType and metadata',
           );
@@ -265,18 +265,12 @@ class UploadQueueRepository {
           await db.execute(
             'CREATE INDEX IF NOT EXISTS idx_upload_queue_status ON upload_queue(status)',
           );
-          AppLogger.i(
-            'UploadQueueRepository: migrated to v4 — ensured index',
-          );
+          AppLogger.i('UploadQueueRepository: migrated to v4 — ensured index');
         }
         // v5: Added uploadId, workerId, heartbeatMs, retryCount, idempotencyKey, nativeMarkedCompleted, serverCallbackCompleted
         if (oldVersion < 5) {
-          await db.execute(
-            "ALTER TABLE upload_queue ADD COLUMN uploadId TEXT",
-          );
-          await db.execute(
-            "ALTER TABLE upload_queue ADD COLUMN workerId TEXT",
-          );
+          await db.execute("ALTER TABLE upload_queue ADD COLUMN uploadId TEXT");
+          await db.execute("ALTER TABLE upload_queue ADD COLUMN workerId TEXT");
           await db.execute(
             "ALTER TABLE upload_queue ADD COLUMN heartbeatMs INTEGER",
           );
@@ -360,6 +354,24 @@ class UploadQueueRepository {
     return maps.map((m) => UploadQueueItem.fromMap(m)).toList();
   }
 
+  static Future<bool> hasInFlightFile({
+    required String filePath,
+    String? uploadType,
+  }) async {
+    final db = await database;
+    final values = <Object?>[filePath, 'completed', 'failed', 'cancelled'];
+    var where = 'filePath = ? AND status NOT IN (?, ?, ?)';
+    if (uploadType != null) {
+      where = '$where AND uploadType = ?';
+      values.add(uploadType);
+    }
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as cnt FROM upload_queue WHERE $where',
+      values,
+    );
+    return ((result.first['cnt'] as int?) ?? 0) > 0;
+  }
+
   static Future<void> updateHeartbeat(int id) async {
     final db = await database;
     await db.update(
@@ -401,7 +413,11 @@ class UploadQueueRepository {
 
   /// Only allow valid state transitions.
   /// Throws if the transition is invalid.
-  static Future<void> _assertValidTransition(Database db, int id, String newStatus) async {
+  static Future<void> _assertValidTransition(
+    Database db,
+    int id,
+    String newStatus,
+  ) async {
     final maps = await db.query(
       'upload_queue',
       columns: ['status'],
@@ -433,12 +449,40 @@ class UploadQueueRepository {
     return UploadQueueItem.fromMap(maps.first);
   }
 
+  static Future<UploadQueueItem?> claimNextPendingItem() async {
+    final db = await database;
+    return await db.transaction<UploadQueueItem?>((txn) async {
+      final maps = await txn.query(
+        'upload_queue',
+        where:
+            'status = ? AND uploadUrl IS NOT NULL AND uploadUrl != ? AND (workerId IS NULL OR workerId = ?)',
+        whereArgs: ['pending', '', ''],
+        orderBy: 'id ASC',
+        limit: 1,
+      );
+      if (maps.isEmpty) return null;
+      final map = maps.first;
+      final id = map['id'] as int;
+      final now = DateTime.now().toIso8601String();
+      final updated = await txn.update(
+        'upload_queue',
+        {'status': 'uploading', 'lastUpdated': now, 'errorMessage': null},
+        where: 'id = ? AND status = ?',
+        whereArgs: [id, 'pending'],
+      );
+      if (updated != 1) return null;
+      return UploadQueueItem.fromMap({
+        ...map,
+        'status': 'uploading',
+        'lastUpdated': now,
+        'errorMessage': null,
+      });
+    });
+  }
+
   static Future<List<UploadQueueItem>> getAll() async {
     final db = await database;
-    final maps = await db.query(
-      'upload_queue',
-      orderBy: 'id ASC',
-    );
+    final maps = await db.query('upload_queue', orderBy: 'id ASC');
     return maps.map((m) => UploadQueueItem.fromMap(m)).toList();
   }
 
@@ -557,17 +601,13 @@ class UploadQueueRepository {
     final db = await database;
     await db.update(
       'upload_queue',
-      {
-        'workerId': workerId,
-        'lastUpdated': DateTime.now().toIso8601String(),
-      },
+      {'workerId': workerId, 'lastUpdated': DateTime.now().toIso8601String()},
       where: 'id = ?',
       whereArgs: [id],
     );
   }
 
-  static Future<List<UploadQueueItem>> getByWorkerId(
-      String workerId) async {
+  static Future<List<UploadQueueItem>> getByWorkerId(String workerId) async {
     final db = await database;
     final maps = await db.query(
       'upload_queue',
@@ -601,18 +641,24 @@ class UploadQueueRepository {
 
   static Future<void> clearCompleted() async {
     final db = await database;
-    await db.delete('upload_queue',
-        where: 'status = ?', whereArgs: ['completed']);
+    await db.delete(
+      'upload_queue',
+      where: 'status = ?',
+      whereArgs: ['completed'],
+    );
     await _reclaimSpace();
   }
 
   /// Delete items with terminal status older than [days] days.
   static Future<void> deleteOldItems({int days = 7}) async {
     final db = await database;
-    final cutoff = DateTime.now().subtract(Duration(days: days)).toIso8601String();
+    final cutoff = DateTime.now()
+        .subtract(Duration(days: days))
+        .toIso8601String();
     await db.delete(
       'upload_queue',
-      where: "status IN ('completed', 'failed', 'cancelled') AND lastUpdated < ?",
+      where:
+          "status IN ('completed', 'failed', 'cancelled') AND lastUpdated < ?",
       whereArgs: [cutoff],
     );
     await _reclaimSpace();
@@ -653,9 +699,12 @@ class UploadQueueRepository {
   }) async {
     final db = await database;
     final now = DateTime.now();
-    final heartbeatCutoff = now.subtract(heartbeatTimeout).millisecondsSinceEpoch;
+    final heartbeatCutoff = now
+        .subtract(heartbeatTimeout)
+        .millisecondsSinceEpoch;
     final fallbackCutoff = now.subtract(fallbackTimeout).toIso8601String();
-    await db.rawUpdate('''
+    await db.rawUpdate(
+      '''
       UPDATE upload_queue
       SET status = 'pending',
           workerId = NULL,
@@ -667,7 +716,9 @@ class UploadQueueRepository {
         OR
         (heartbeatMs IS NULL AND lastUpdated < ?)
       )
-    ''', [now.toIso8601String(), heartbeatCutoff, fallbackCutoff]);
+    ''',
+      [now.toIso8601String(), heartbeatCutoff, fallbackCutoff],
+    );
   }
 
   /// Delete file from cache/temp if it lives inside our app directories.
@@ -690,7 +741,9 @@ class UploadQueueRepository {
   /// Get all file paths currently tracked by the queue (all statuses).
   static Future<Set<String>> getAllTrackedPaths() async {
     final db = await database;
-    final maps = await db.rawQuery('SELECT DISTINCT filePath FROM upload_queue');
+    final maps = await db.rawQuery(
+      'SELECT DISTINCT filePath FROM upload_queue',
+    );
     return maps.map((m) => m['filePath'] as String).toSet();
   }
 

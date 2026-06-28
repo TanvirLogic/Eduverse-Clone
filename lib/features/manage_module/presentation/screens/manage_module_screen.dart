@@ -267,15 +267,21 @@ class _ManageModuleBodyState extends State<_ManageModuleBody> {
                                       );
                                       return;
                                     }
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => VideoPlayerScreen(
-                                          videoUrl: videoUrl,
-                                          title: title,
+                                    try {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => VideoPlayerScreen(
+                                            videoUrl: videoUrl,
+                                            title: title,
+                                          ),
                                         ),
-                                      ),
-                                    );
+                                      );
+                                    } catch (_) {
+                                      ToastService.showError(
+                                        'Could not open video player',
+                                      );
+                                    }
                                   },
                                   onTapResource: (fileUrl, title) {
                                     if (fileUrl.isEmpty) {
@@ -284,10 +290,16 @@ class _ManageModuleBodyState extends State<_ManageModuleBody> {
                                       );
                                       return;
                                     }
-                                    launchUrl(
-                                      Uri.parse(fileUrl),
-                                      mode: LaunchMode.externalApplication,
-                                    );
+                                    try {
+                                      launchUrl(
+                                        Uri.parse(fileUrl),
+                                        mode: LaunchMode.externalApplication,
+                                      );
+                                    } catch (_) {
+                                      ToastService.showError(
+                                        'Could not open resource',
+                                      );
+                                    }
                                   },
                                 ),
                               ],

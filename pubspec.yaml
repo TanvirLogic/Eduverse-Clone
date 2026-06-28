@@ -55,3 +55,7 @@ flutter:
     - assets/images/profile_icons/
     - assets/images/social_icons/
     - assets/images/revenue_icons/
+
+dependency_overrides:
+  background_downloader:
+    path: packages/background_downloader

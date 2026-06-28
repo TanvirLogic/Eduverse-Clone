@@ -12,9 +12,24 @@ class AppLogger {
     ),
   );
 
-  static void d(String message) => _logger.d(message);
-  static void i(String message) => _logger.i(message);
-  static void w(String message) => _logger.w(message);
-  static void e(String message, [dynamic error, StackTrace? stackTrace]) =>
-      _logger.e(message, error: error, stackTrace: stackTrace);
+  static String _format(String message, String? tag) {
+    if (tag == null || tag.isEmpty) return message;
+    return '[$tag] $message';
+  }
+
+  static void d(String message, {String? tag}) =>
+      _logger.d(_format(message, tag));
+
+  static void i(String message, {String? tag}) =>
+      _logger.i(_format(message, tag));
+
+  static void w(String message, {String? tag}) =>
+      _logger.w(_format(message, tag));
+
+  static void e(
+    String message, {
+    dynamic error,
+    StackTrace? stackTrace,
+    String? tag,
+  }) => _logger.e(_format(message, tag), error: error, stackTrace: stackTrace);
 }

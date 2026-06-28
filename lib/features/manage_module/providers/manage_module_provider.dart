@@ -224,6 +224,16 @@ class ManageModuleProvider extends ChangeNotifier {
       AppLogger.i(
         '_restorePendingUploads: found ${lessonItems.length} item(s) to restore',
       );
+      for (final item in lessonItems) {
+        final pct = item.fileSize > 0
+            ? ((item.bytesUploaded / item.fileSize) * 100).round()
+            : 0;
+        AppLogger.i(
+          '_restorePendingUploads:   candidate id=${item.id} '
+          'type=${item.uploadType} status=${item.status} '
+          'progress=$pct% title="${item.title}"',
+        );
+      }
 
       bool hasUpdates = false;
 
@@ -273,7 +283,10 @@ class ManageModuleProvider extends ChangeNotifier {
 
         final isResource = item.uploadType == 'resource';
 
-        // Try to get real-time progress from background_downloader's database
+        // Try to get real-time progress from background_downloader's database.
+        // This catches the case where the native upload finished (100% in
+        // notification tray) but the app was killed before the Dart callback
+        // could write the final progress to SQLite.
         double restoredProgress = item.fileSize > 0
             ? (item.bytesUploaded / item.fileSize)
             : 0.0;
@@ -282,20 +295,40 @@ class ManageModuleProvider extends ChangeNotifier {
             final record = await FileDownloader().database.recordForId(
               item.workerId!,
             );
-            if (record != null && record.progress > restoredProgress) {
-              restoredProgress = record.progress;
-              // Sync to our SQLite
-              if (item.fileSize > 0) {
-                await UploadQueueRepository.updateProgress(
-                  id: item.id!,
-                  bytesUploaded: (record.progress * item.fileSize).round(),
+            if (record != null) {
+              AppLogger.i(
+                '_restorePendingUploads: native record for queueId=${item.id} '
+                'status=${record.status} progress=${(record.progress * 100).toInt()}%',
+              );
+              // Native upload already complete — skip creating PendingLesson.
+              // The upload pipeline in _loadQueue() will process the callback.
+              if (record.status == TaskStatus.complete ||
+                  record.progress >= 1.0) {
+                AppLogger.i(
+                  '_restorePendingUploads: skipping queueId=${item.id} '
+                  '"${meta.lessonTitle}" — native upload already complete',
                 );
+                continue;
+              }
+              if (record.progress > restoredProgress) {
+                restoredProgress = record.progress;
+                if (item.fileSize > 0) {
+                  await UploadQueueRepository.updateProgress(
+                    id: item.id!,
+                    bytesUploaded:
+                        (record.progress * item.fileSize).round(),
+                  );
+                }
               }
             }
           } catch (_) {}
         }
         AppLogger.i(
-          '_restorePendingUploads: restoring ${isResource ? "resource" : "lesson"} "${meta.lessonTitle}" status=${item.status} progress=${restoredProgress.toStringAsFixed(2)}',
+          '_restorePendingUploads: restoring ${isResource ? "resource" : "lesson"} '
+          '"${meta.lessonTitle}" queueId=${item.id} '
+          'status=${item.status} progress=${(restoredProgress * 100).toInt()}% '
+          'bytes=${item.bytesUploaded}/${item.fileSize} '
+          'moduleId=${meta.moduleId}',
         );
 
         final lessonId = restoredLessonId ?? _nextLessonId++;
@@ -686,8 +719,8 @@ class ManageModuleProvider extends ChangeNotifier {
 
   void _startProgressPolling() {
     _progressTimer?.cancel();
-    _pollProgress(); // Run immediately for instant UI update
-    _progressTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+    _pollProgress();
+    _progressTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       _pollProgress();
     });
   }
@@ -740,7 +773,9 @@ class ManageModuleProvider extends ChangeNotifier {
         if (pending.uploadStatus != status ||
             pending.uploadProgress != progress) {
           AppLogger.i(
-            '_pollProgress: queueId=$queueId status=$status progress=${progress.toStringAsFixed(2)}',
+            '_pollProgress: queueId=$queueId status=$status '
+            'progress=${(progress * 100).toInt()}% '
+            'title="${pending.title}"',
           );
           pending.uploadStatus = status;
           pending.uploadProgress = progress;
@@ -752,6 +787,10 @@ class ManageModuleProvider extends ChangeNotifier {
         }
 
         if (status == 'completed') {
+          AppLogger.i(
+            '_pollProgress: queueId=$queueId completed '
+            'url=${dbItem.fileUrl ?? "N/A"}',
+          );
           pending.uploadStatus = 'completed';
           pending.uploadProgress = 1.0;
           updated = true;
@@ -795,8 +834,10 @@ class ManageModuleProvider extends ChangeNotifier {
   /// auto-cleans the old row to allow re-upload.
   /// Returns true if the file is safe to queue, false if blocked.
   Future<bool> _checkDedupOrCleanup(String filePath) async {
-    final allItems = await UploadQueueRepository.getAll();
-    final existing = allItems.cast<UploadQueueItem?>().firstWhere(
+    final existingItems = await UploadQueueRepository.getByFileType(
+      filePath: filePath,
+    );
+    final existing = existingItems.cast<UploadQueueItem?>().firstWhere(
       (item) =>
           item!.filePath == filePath &&
           (item.uploadType == 'module_lesson' || item.uploadType == 'resource'),

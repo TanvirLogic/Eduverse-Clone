@@ -80,7 +80,11 @@ Future<void> openFacebookProfile(
   if (facebookLink.url.isNotEmpty) {
     final uri = Uri.tryParse(facebookLink.url);
     if (uri != null && await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      try {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (_) {
+        // Silently recover
+      }
     }
   }
 }

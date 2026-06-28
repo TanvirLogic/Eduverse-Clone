@@ -16,12 +16,24 @@ class ManageModuleList extends StatelessWidget {
   final void Function(CourseModule module) onEditModule;
   final void Function(CourseModule module) onToggleExpand;
   final void Function(CourseModule module, String newName) onRename;
-  final void Function(String currentName, ValueChanged<String> onSaved) onShowRenameDialog;
+  final void Function(String currentName, ValueChanged<String> onSaved)
+  onShowRenameDialog;
   final void Function(int index) onAddVideo;
   final void Function(int index) onAddResource;
-  final void Function(CourseModule module, int oldLessonIndex, int newLessonIndex) onReorderLesson;
-  final Future<void> Function(CourseModule module, int lessonIndex, String newName) onRenameLesson;
-  final Future<bool> Function(CourseModule module, int lessonIndex) onDeleteLesson;
+  final void Function(
+    CourseModule module,
+    int oldLessonIndex,
+    int newLessonIndex,
+  )
+  onReorderLesson;
+  final Future<void> Function(
+    CourseModule module,
+    int lessonIndex,
+    String newName,
+  )
+  onRenameLesson;
+  final Future<bool> Function(CourseModule module, int lessonIndex)
+  onDeleteLesson;
   final void Function(CourseModule module, int lessonIndex) onEditLesson;
   final void Function(String videoUrl, String title) onTapVideo;
   final void Function(String fileUrl, String title) onTapResource;
@@ -76,7 +88,11 @@ class ManageModuleList extends StatelessWidget {
             ),
             child: Text(
               module.title,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: cs.onSurface),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: cs.onSurface,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -116,10 +132,14 @@ class ManageModuleList extends StatelessWidget {
                   onShowRenameDialog: onShowRenameDialog,
                   onAddVideo: () => onAddVideo(index),
                   onAddResource: () => onAddResource(index),
-                  onReorderLesson: (oldLessonIndex, newLessonIndex) => onReorderLesson(module, oldLessonIndex, newLessonIndex),
-                  onRenameLesson: (lessonIndex, newName) => onRenameLesson(module, lessonIndex, newName),
-                  onDeleteLesson: (lessonIndex) => onDeleteLesson(module, lessonIndex),
-                  onEditLesson: (lessonIndex) => onEditLesson(module, lessonIndex),
+                  onReorderLesson: (oldLessonIndex, newLessonIndex) =>
+                      onReorderLesson(module, oldLessonIndex, newLessonIndex),
+                  onRenameLesson: (lessonIndex, newName) =>
+                      onRenameLesson(module, lessonIndex, newName),
+                  onDeleteLesson: (lessonIndex) =>
+                      onDeleteLesson(module, lessonIndex),
+                  onEditLesson: (lessonIndex) =>
+                      onEditLesson(module, lessonIndex),
                   onTapVideo: onTapVideo,
                   onTapResource: onTapResource,
                 ),

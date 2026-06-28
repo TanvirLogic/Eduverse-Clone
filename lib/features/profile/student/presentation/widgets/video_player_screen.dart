@@ -43,24 +43,33 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _enterFullScreen();
-      final provider = context.read<VideoPlayerProvider>();
+      try {
+        _enterFullScreen();
+        final provider = context.read<VideoPlayerProvider>();
 
-      final sameVideo = provider.currentVideoUrl == widget.videoUrl;
-      if (!sameVideo || !provider.isActive) {
-        provider.openVideo(
-          url: widget.videoUrl,
-          title: widget.title,
-          initialPosition: widget.initialPosition,
-          lessonId: widget.lessonId,
-          courseId: widget.courseId,
-          onCompleted: () {
-            widget.onCompleted?.call();
-            _handleAutoPlayNext();
-          },
-          nextVideoUrl: widget.nextVideoUrl,
-          nextVideoTitle: widget.nextVideoTitle,
-        );
+        final sameVideo = provider.currentVideoUrl == widget.videoUrl;
+        if (!sameVideo || !provider.isActive) {
+          provider.openVideo(
+            url: widget.videoUrl,
+            title: widget.title,
+            initialPosition: widget.initialPosition,
+            lessonId: widget.lessonId,
+            courseId: widget.courseId,
+            onCompleted: () {
+              widget.onCompleted?.call();
+              _handleAutoPlayNext();
+            },
+            nextVideoUrl: widget.nextVideoUrl,
+            nextVideoTitle: widget.nextVideoTitle,
+          );
+        } else {
+          provider.seek(Duration.zero);
+          if (!provider.isPlaying) {
+            provider.play();
+          }
+        }
+      } catch (_) {
+        // Silently recover — video screen will show error state via provider.hasError
       }
     });
   }

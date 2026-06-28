@@ -209,16 +209,35 @@ class _PendingLessonRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    // Read live progress from the queue provider if this item is
-    // the currently active upload — gives real-time percentage
-    // instead of waiting for the 5s polling cycle.
     final queueProvider = context.watch<UnifiedUploadQueueProvider>();
     final isActiveUpload = queueProvider.activeItem?.id == pending.queueId;
-    final liveProgress = isActiveUpload
-        ? queueProvider.activeProgress / 100.0
-        : pending.uploadProgress;
-    final isUploading = isActiveUpload || pending.uploadStatus == 'uploading';
-    final progress = isUploading ? liveProgress : pending.uploadProgress;
+    final nativeProgress = queueProvider.activeProgress / 100.0;
+    final dbProgress = pending.uploadProgress;
+    final progress = isActiveUpload
+        ? nativeProgress >= dbProgress ? nativeProgress : dbProgress
+        : dbProgress;
+
+    final bool showDeterminate;
+    final String statusText;
+    if (pending.uploadStatus == 'failed') {
+      showDeterminate = false;
+      statusText = 'Upload failed';
+    } else if (isActiveUpload && progress > 0) {
+      showDeterminate = true;
+      statusText = 'Uploading ${(progress * 100).toInt()}%';
+    } else if (isActiveUpload) {
+      showDeterminate = false;
+      statusText = 'Preparing...';
+    } else if (pending.uploadStatus == 'uploading') {
+      showDeterminate = false;
+      statusText = 'Processing...';
+    } else if (pending.uploadStatus == 'completed') {
+      showDeterminate = true;
+      statusText = 'Upload complete';
+    } else {
+      showDeterminate = false;
+      statusText = 'Waiting to upload...';
+    }
 
     return Material(
       color: Colors.transparent,
@@ -291,7 +310,7 @@ class _PendingLessonRow extends StatelessWidget {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
-                    child: isUploading
+                    child: showDeterminate
                         ? LinearProgressIndicator(
                             value: progress,
                             minHeight: 4,
@@ -307,13 +326,7 @@ class _PendingLessonRow extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          pending.uploadStatus == 'pending'
-                              ? 'Waiting to upload...'
-                              : pending.uploadStatus == 'uploading'
-                                  ? 'Uploading ${(progress * 100).toInt()}%'
-                                  : pending.uploadStatus == 'failed'
-                                      ? 'Upload failed'
-                                      : 'Upload complete',
+                          statusText,
                           style: TextStyle(
                             fontSize: 11,
                             color: pending.uploadStatus == 'failed'

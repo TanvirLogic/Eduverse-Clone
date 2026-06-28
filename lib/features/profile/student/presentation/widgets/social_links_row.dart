@@ -40,7 +40,11 @@ class SocialLinksRow extends StatelessWidget {
   Future<void> _launchUrl(String url) async {
     final uri = Uri.tryParse(url);
     if (uri != null && uri.hasScheme && uri.hasAuthority) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      try {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (_) {
+        // Silently recover
+      }
     }
   }
 

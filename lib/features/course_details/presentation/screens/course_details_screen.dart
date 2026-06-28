@@ -850,10 +850,14 @@ class _NativeModuleTabViewState extends State<_NativeModuleTabView> {
                             if (!isLocked) {
                               setState(() => _activeLessonTitle = lesson.title);
                               if (lesson.isResource && lesson.fileUrl != null) {
-                                launchUrl(
-                                  Uri.parse(lesson.fileUrl!),
-                                  mode: LaunchMode.externalApplication,
-                                );
+                                try {
+                                  launchUrl(
+                                    Uri.parse(lesson.fileUrl!),
+                                    mode: LaunchMode.externalApplication,
+                                  );
+                                } catch (_) {
+                                  // Silently recover — resource open failed
+                                }
                               } else if (!lesson.isResource &&
                                   lesson.videoUrl != null) {
                                 final next = _findNextLesson(

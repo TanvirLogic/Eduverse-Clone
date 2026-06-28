@@ -218,7 +218,7 @@ class BackgroundUploadService {
     required String filePath,
     required String uploadUrl,
     required String contentType,
-    Duration timeout = const Duration(minutes: 30),
+    Duration timeout = const Duration(hours: 24),
     void Function(double progress)? onProgress,
   }) async {
     try {
